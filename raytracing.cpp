@@ -42,8 +42,28 @@ void init()
 //return the color of your pixel.
 Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 {
+
+	//  if(intersect(level, ray, max, &hit)) {
+	//    Shade(level, hit, &color);
+	//  }
+	//  else
+	//    color=BackgroundColor
+
 	return Vec3Df(dest[0],dest[1],dest[2]);
 }
+
+// bool intersect(level, ray, max, &hit) {
+	// compute intersection between rays and planes
+// }
+
+//Shade(level, hit, &color){
+//  for each lightsource
+//    ComputeDirectLight(hit, &directColor);
+//  if(material reflects && (level < maxLevel))
+//    computeReflectedRay(hit, &reflectedray);
+//    Trace(level+1, reflectedRay, &reflectedColor);
+//  color = directColor + reflection * reflectedcolor + transmission * refractedColor;
+//}
 
 
 
@@ -122,9 +142,9 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
 	testRayDestination=rayDestination;
 	
 	// do here, whatever you want with the keyboard input t.
-	
-	//...
-	
+		
+//      Trace(0, ray, &color);
+//      PutPixel(x, y, color);
 	
 	std::cout<<t<<" pressed! The mouse was in location "<<x<<","<<y<<"!"<<std::endl;	
 }
