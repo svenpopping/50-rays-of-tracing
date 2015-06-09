@@ -42,6 +42,27 @@ void init()
 //return the color of your pixel.
 Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 {
+  float depth;
+  Vec3Df color = Vec3Df(0,0,0);
+  for(int i = 0; i < MyMesh.triangles.size(); i++){
+    Triangle triangle = MyMesh.triangles.at(i);
+    Vertex v0 = MyMesh.vertices.at(triangle.v[0]);
+    Vertex v1 = MyMesh.vertices.at(triangle.v[1]);
+    Vertex v2 = MyMesh.vertices.at(triangle.v[2]);
+    
+
+  
+    bool intersectTest = rayTriangleIntersect(origin, dest, v0.p, v1.p, v2.p, depth);
+    if(intersectTest){
+      // save color and depth
+      unsigned int triMat = MyMesh.triangleMaterials.at(i);
+      color=MyMesh.materials.at(triMat).Kd() + MyMesh.materials.at(triMat).Ka() + MyMesh.materials.at(triMat).Ks();
+    }
+    
+
+  }
+  
+  return color;
 
 	//  if(intersect(level, ray, max, &hit)) {
 	//    Shade(level, hit, &color);
@@ -49,12 +70,62 @@ Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 	//  else
 	//    color=BackgroundColor
 
-	return Vec3Df(dest[0],dest[1],dest[2]);
+	//return Vec3Df(dest[0],dest[1],dest[2]);
 }
 
 // bool intersect(level, ray, max, &hit) {
 	// compute intersection between rays and planes
 // }
+bool rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0, const Vec3Df v1, const Vec3Df v2,float &t)
+{
+  // compute plane's normal
+  Vec3Df v0v1 = v1 - v0;
+  Vec3Df v0v2 = v2 - v0;
+  // no need to normalize
+  Vec3Df N = Vec3Df::crossProduct(v0v1, v0v2); // N
+  float area2 = N.getLength();
+  
+  // Step 1: finding P
+  
+  // check if ray and plane are parallel ?
+  float NdotRayDirection = Vec3Df::dotProduct(N, dir);
+  if (fabs(NdotRayDirection) < 0.000000001) // almost 0
+    return false; // they are parallel so they don't intersect !
+  
+  // compute d parameter using equation 2
+  float d = Vec3Df::dotProduct(N, v0);
+  
+  // compute t (equation 3)
+  t = (Vec3Df::dotProduct(N, orig) + d) / NdotRayDirection;
+  // check if the triangle is in behind the ray
+  if (t < 0) return false; // the triangle is behind
+  
+  // compute the intersection point using equation 1
+  Vec3Df P = orig + t * dir;
+  
+  // Step 2: inside-outside test
+  Vec3Df C; // vector perpendicular to triangle's plane
+  
+  // edge 0
+  Vec3Df edge0 = v1 - v0;
+  Vec3Df vp0 = P - v0;
+  C = Vec3Df::crossProduct(edge0, vp0);
+  if (Vec3Df::dotProduct(N, C) < 0) return false; // P is on the right side
+  
+  // edge 1
+  Vec3Df edge1 = v2 - v1;
+  Vec3Df vp1 = P - v1;
+  C = Vec3Df::crossProduct(edge1, vp1);
+  if (Vec3Df::dotProduct(N, C) < 0)  return false; // P is on the right side
+  
+  // edge 2
+  Vec3Df edge2 = v0 - v2;
+  Vec3Df vp2 = P - v2;
+  C = Vec3Df::crossProduct(edge2, vp2);
+  if (Vec3Df::dotProduct(N,C) < 0) return false; // P is on the right side;
+  
+  return true; // this ray hits the triangle
+}
 
 //Shade(level, hit, &color){
 //  for each lightsource
