@@ -6,7 +6,6 @@ config.h
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
@@ -30,3 +29,5 @@ config.h
 *.exe
 *.out
 *.app
+
+*/*.xcodeproj/*
