@@ -128,3 +128,35 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
 	
 	std::cout<<t<<" pressed! The mouse was in location "<<x<<","<<y<<"!"<<std::endl;	
 }
+
+
+
+// Pseudocode From slides
+
+//RayTrace (view)
+//{
+//  for (y=0; y<view.yres; ++y){
+//    for(x=0; x<view.xres; ++x){
+//      ComputeRay(x, y, view, &ray);
+//      Trace(0, ray, &color);
+//      PutPixel(x, y, color);
+//    }
+//  }
+//}
+//
+//Trace( level, ray, &color){
+//  if(intersect(level, ray, max, &hit)) {
+//    Shade(level, hit, &color);
+//  }
+//  else
+//    color=BackgroundColor
+//}
+//
+//Shade(level, hit, &color){
+//  for each lightsource
+//    ComputeDirectLight(hit, &directColor);
+//  if(material reflects && (level < maxLevel))
+//    computeReflectedRay(hit, &reflectedray);
+//    Trace(level+1, reflectedRay, &reflectedColor);
+//  color = directColor + reflection * reflectedcolor + transmission * refractedColor;
+//}
