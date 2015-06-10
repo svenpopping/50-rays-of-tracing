@@ -43,7 +43,7 @@ void init()
 //return the color of your pixel.
 Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 {
-  float depth;
+  float depth = 1000.f;
   Vec3Df color = Vec3Df(0,0,0);
   for(int i = 0; i < MyMesh.triangles.size(); i++){
     Triangle triangle = MyMesh.triangles.at(i);
@@ -81,7 +81,7 @@ Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 
 // The source of this function is:
 // http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
-bool rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0, const Vec3Df v1, const Vec3Df v2,float &t)
+bool rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0, const Vec3Df v1, const Vec3Df v2, float &depth)
 {
   // compute plane's normal
   Vec3Df v0v1 = v1 - v0;
@@ -101,9 +101,10 @@ bool rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0
   float d = Vec3Df::dotProduct(N, v0);
   
   // compute t (equation 3) (t is distance from the ray origin to P)
-  t = - (Vec3Df::dotProduct(N, orig) + d) / NdotRayDirection;
+  float t = - (Vec3Df::dotProduct(N, orig) + d) / NdotRayDirection;
   // check if the triangle is in behind the ray
   if (t < 0) return false; // the triangle is behind
+  if (t > depth) return false; // already have something closerby
   
   // compute the intersection point P using equation 1
   Vec3Df P = orig + t * dir;
@@ -121,14 +122,15 @@ bool rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0
   Vec3Df edge1 = v2 - v1;
   Vec3Df vp1 = P - v1;
   C = Vec3Df::crossProduct(edge1, vp1);
-  if (Vec3Df::dotProduct(N, C) < 0)  return false; // P is on the right side
+  if (Vec3Df::dotProduct(N, C) < 0) return false; // P is on the right side
   
   // edge 2
   Vec3Df edge2 = v0 - v2;
   Vec3Df vp2 = P - v2;
   C = Vec3Df::crossProduct(edge2, vp2);
-  if (Vec3Df::dotProduct(N,C) < 0) return false; // P is on the right side;
+  if (Vec3Df::dotProduct(N, C) < 0) return false; // P is on the right side;
   
+  depth = t;
   return true; // this ray hits the triangle
 }
 
