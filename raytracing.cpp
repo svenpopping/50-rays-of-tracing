@@ -47,9 +47,9 @@ Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
   Vec3Df color = Vec3Df(0,0,0);
   for(int i = 0; i < MyMesh.triangles.size(); i++){
     Triangle triangle = MyMesh.triangles.at(i);
-    Vertex v0 = MyMesh.vertices.at(triangle.v[0]);
+    Vertex v0 = MyMesh.vertices.at(triangle.v[2]);
     Vertex v1 = MyMesh.vertices.at(triangle.v[1]);
-    Vertex v2 = MyMesh.vertices.at(triangle.v[2]);
+    Vertex v2 = MyMesh.vertices.at(triangle.v[0]);
     
 
   
@@ -101,7 +101,7 @@ bool rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0
   float d = Vec3Df::dotProduct(N, v0);
   
   // compute t (equation 3) (t is distance from the ray origin to P)
-  float t = - (Vec3Df::dotProduct(N, orig) + d) / NdotRayDirection;
+  float t = ( (-Vec3Df::dotProduct(N, orig)) + d) /fabs( NdotRayDirection);
   // check if the triangle is in behind the ray
   if (t < 0) return false; // the triangle is behind
   if (t > depth) return false; // already have something closerby
