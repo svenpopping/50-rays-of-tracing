@@ -101,7 +101,7 @@ bool rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0
   float d = Vec3Df::dotProduct(N, v0);
   
   // compute t (equation 3) (t is distance from the ray origin to P)
-  t = (Vec3Df::dotProduct(N, orig) + d) / NdotRayDirection;
+  t = - (Vec3Df::dotProduct(N, orig) + d) / NdotRayDirection;
   // check if the triangle is in behind the ray
   if (t < 0) return false; // the triangle is behind
   
