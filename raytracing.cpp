@@ -73,9 +73,13 @@ Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 	//return Vec3Df(dest[0],dest[1],dest[2]);
 }
 
+// Pseudocode from slide
 // bool intersect(level, ray, max, &hit) {
 	// compute intersection between rays and planes
 // }
+
+// The source of this function is:
+// http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 bool rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0, const Vec3Df v1, const Vec3Df v2,float &t)
 {
   // compute plane's normal
