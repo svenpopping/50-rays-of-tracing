@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <float.h>
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -43,7 +44,7 @@ void init()
 //return the color of your pixel.
 Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 {
-  float depth = 1000.f;
+  float depth = FLT_MAX;
   Vec3Df color = Vec3Df(0,0,0);
   for(int i = 0; i < MyMesh.triangles.size(); i++){
     Triangle triangle = MyMesh.triangles.at(i);
