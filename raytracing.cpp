@@ -90,22 +90,22 @@ bool rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0
   Vec3Df N = Vec3Df::crossProduct(v0v1, v0v2); // N
   float area2 = N.getLength();
   
-  // Step 1: finding P
+  // Step 1: finding P (the point where the ray intersects the plane)
   
   // check if ray and plane are parallel ?
   float NdotRayDirection = Vec3Df::dotProduct(N, dir);
   if (fabs(NdotRayDirection) < 0.000000001) // almost 0
     return false; // they are parallel so they don't intersect !
   
-  // compute d parameter using equation 2
+  // compute d parameter using equation 2 (d is the distance from the origin (0, 0, 0) to the plane)
   float d = Vec3Df::dotProduct(N, v0);
   
-  // compute t (equation 3)
+  // compute t (equation 3) (t is distance from the ray origin to P)
   t = (Vec3Df::dotProduct(N, orig) + d) / NdotRayDirection;
   // check if the triangle is in behind the ray
   if (t < 0) return false; // the triangle is behind
   
-  // compute the intersection point using equation 1
+  // compute the intersection point P using equation 1
   Vec3Df P = orig + t * dir;
   
   // Step 2: inside-outside test
