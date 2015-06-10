@@ -47,9 +47,9 @@ Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
   Vec3Df color = Vec3Df(0,0,0);
   for(int i = 0; i < MyMesh.triangles.size(); i++){
     Triangle triangle = MyMesh.triangles.at(i);
-    Vertex v0 = MyMesh.vertices.at(triangle.v[2]);
+    Vertex v0 = MyMesh.vertices.at(triangle.v[0]);
     Vertex v1 = MyMesh.vertices.at(triangle.v[1]);
-    Vertex v2 = MyMesh.vertices.at(triangle.v[0]);
+    Vertex v2 = MyMesh.vertices.at(triangle.v[2]);
     
 
   
