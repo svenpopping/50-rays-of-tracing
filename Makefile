@@ -1,4 +1,4 @@
-CXXFLAGS=-std=c++11 -Wall -Wextra -pedantic -Wno-unused-argument
+CXXFLAGS=-std=c++11 -Wall -Wextra -pedantic -Wno-unused-argument -Wno-unused-variable
 include mk/$(shell uname -s).mk
 
 SRCDIR=.

@@ -1,2 +1,2 @@
 CXX=g++
-LDFLAGS=-lGL -lglut
+LDFLAGS=-lGL -lGLU -lglut
