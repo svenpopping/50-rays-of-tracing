@@ -16,6 +16,7 @@
 //a simple debug drawing. A ray 
 Vec3Df testRayOrigin;
 Vec3Df testRayDestination;
+Vec3Df testColor;
 
 
 //use this function for any preprocessing of the mesh.
@@ -170,10 +171,10 @@ void yourDebugDraw()
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glDisable(GL_LIGHTING);
 	glBegin(GL_LINES);
-	glColor3f(0,1,1);
+	glColor3f(testColor[0],testColor[1],testColor[2]);
 	glVertex3f(testRayOrigin[0], testRayOrigin[1], testRayOrigin[2]);
-	glColor3f(0,0,1);
-	glVertex3f(testRayDestination[0], testRayDestination[1], testRayDestination[2]);
+	glColor3f(testColor[0],testColor[1],testColor[2]);
+  glVertex3f(testRayDestination[0], testRayDestination[1], testRayDestination[2]);
 	glEnd();
 	glPointSize(10);
 	glBegin(GL_POINTS);
@@ -215,7 +216,9 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
 	//try it: Press a key, move the camera, see the ray that was launched as a line.
 	testRayOrigin=rayOrigin;	
 	testRayDestination=rayDestination;
-	
+  testColor = performRayTracing(rayOrigin, rayDestination);
+  
+  std::cout<<" The color from the ray is "<<testColor[0]<<","<<testColor[1]<<","<<testColor[2]<<std::endl;
 	// do here, whatever you want with the keyboard input t.
 		
 //      Trace(0, ray, &color);
