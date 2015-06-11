@@ -1,10 +1,12 @@
-# 50_shades_of_raytracing
+# 50 Rays of Tracing
 
-# Compiling with Make
+Computer Graphics project for BSc Computer Science at the Delft University of Technology.
+
+#### Compiling with Make
 ```
 $ make
 ```
 
-# OSX users
+#### OS X users
 Use Xcode or Make!
 If you use Xcode, make sure to link the binaries with the OpenGL and GLUT frameworks. You can do this at the build phases settings of your project.
