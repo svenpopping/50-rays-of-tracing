@@ -67,7 +67,7 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 
 		Vec3Df N = Vec3Df(0, 0, 0);
 		Vec3Df intersection = rayTriangleIntersect(origin, dir, v0.p, v1.p, v2.p, depth, N);
-		if (isNulVector(intersection)){
+		if (!isNulVector(intersection)){
 			// save color and depth
 			color = shade(dir, intersection, level, i, N);
 		}
@@ -84,7 +84,6 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
 	color += diffuse(dir, N, triangleIndex);
 	color += ambient(dir, intersection, level, triangleIndex);
 	color += speculair(dir, intersection, level, triangleIndex);
-
 	return color;
 }
 
