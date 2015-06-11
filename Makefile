@@ -1,14 +1,16 @@
-CXXFLAGS=-std=c++11 -Wall -Wextra -pedantic -Wno-unused-argument -Wno-unused-variable
-include mk/$(shell uname -s).mk
-
-SRCDIR=.
-OBJDIR=.
+INCDIR=include
+SRCDIR=src
+OBJDIR=obj
 SRCS=\
 	raytracing.cpp \
 	mesh.cpp \
 	main.cpp
 OBJS=$(foreach S,$(SRCS:.cpp=.o),$(OBJDIR)/$(S))
-BINARY=$(OBJDIR)/50_rays_of_tracing
+BINARY=./50_rays_of_tracing
+
+CPPFLAGS=-I. -I$(INCDIR)
+CXXFLAGS=-std=c++11 -Wall -Wextra -pedantic -Wno-unused-argument -Wno-unused-variable
+include mk/$(shell uname -s).mk
 
 
 .PHONY: all clean
@@ -22,10 +24,10 @@ $(BINARY): $(OBJS)
 	$(CXX) $(LDFLAGS) $(OBJS) -o $(BINARY)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 
 # Dependencies.
-raytracing.cpp: raytracing.h
-main.cpp: raytracing.h mesh.h traqueboule.h imageWriter.h
-mesh.cpp: mesh.h
+$(SRCDIR)/raytracing.cpp: $(INCDIR)/raytracing.h
+$(SRCDIR)/main.cpp: $(INCDIR)/raytracing.h $(INCDIR)/mesh.h $(INCDIR)/traqueboule.h $(INCDIR)/imageWriter.h
+$(SRCDIR)/mesh.cpp: $(INCDIR)/mesh.h
