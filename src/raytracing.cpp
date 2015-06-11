@@ -69,7 +69,7 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 		Vec3Df intersection = rayTriangleIntersect(origin, dir, v0.p, v1.p, v2.p, depth, N);
 		if (isNulVector(intersection)){
 			// save color and depth
-			color = shade(origin, intersection, level, i, N);
+			color = shade(dir, intersection, level, i, N);
 		}
 
 
@@ -77,13 +77,13 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 	return color;
 }
 
-Vec3Df shade(const Vec3Df origin, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
+Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	Vec3Df lightDirection = Vec3Df(0, 0, 0);
-	lightDirection = lightVector(intersection, origin);
-	color += diffuse(lightDirection, N, triangleIndex);
-	color += ambient(origin, intersection, level, triangleIndex);
-	color += speculair(origin, intersection, level, triangleIndex);
+	//lightDirection = lightVector(intersection, origin);
+	color += diffuse(dir, N, triangleIndex);
+	color += ambient(dir, intersection, level, triangleIndex);
+	color += speculair(dir, intersection, level, triangleIndex);
 
 	return color;
 }
@@ -96,8 +96,8 @@ Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex)
 	// diffuser = Kd * dot(lightsource, normal) * Od * Ld
 	// Od = object color
 	// Ld = lightSource color
-	Vec3Df diffuser = color * (Vec3Df::dotProduct(lightSource, normal)) / pow(normal.getLength(), 2) * 1 * 1;
-	return diffuser;
+	//Vec3Df diffuser = color * (Vec3Df::dotProduct(lightSource, normal)) / pow(normal.getLength(), 2) * 1 * 1;
+	return color;
 }
 
 Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
