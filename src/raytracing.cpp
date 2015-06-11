@@ -99,7 +99,7 @@ Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex)
 	return color;
 }
 
-Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
+Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){  
 	Vec3Df color = Vec3Df(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 	color = MyMesh.materials.at(triMat).Ka();
