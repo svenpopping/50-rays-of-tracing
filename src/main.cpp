@@ -122,10 +122,13 @@ int main(int argc, char** argv)
 
 	init();
 
-    
+#if defined(FIFTYRAYS_ONLYTRACE)
+    keyboard('r', 0, 0);
+#else    
 	//main loop for glut... this just runs your application
     glutMainLoop();
-        
+#endif
+   
     return 0;  // execution never reaches this point
 }
 
