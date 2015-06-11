@@ -65,7 +65,7 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 		Vertex v1 = MyMesh.vertices.at(triangle.v[1]);
 		Vertex v2 = MyMesh.vertices.at(triangle.v[2]);
 
-		Vec3Df N;
+		Vec3Df N = Vec3Df(0, 0, 0);
 		Vec3Df intersection = rayTriangleIntersect(origin, dir, v0.p, v1.p, v2.p, depth, N);
 		if (isNulVector(intersection)){
 			// save color and depth
@@ -79,7 +79,8 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 
 Vec3Df shade(const Vec3Df origin, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
 	Vec3Df color = Vec3Df(0, 0, 0);
-	Vec3Df lightDirection = lightVector(intersection, origin);
+	Vec3Df lightDirection = Vec3Df(0, 0, 0);
+	lightDirection = lightVector(intersection, origin);
 	color += diffuse(lightDirection, N, triangleIndex);
 	color += ambient(origin, intersection, level, triangleIndex);
 	color += speculair(origin, intersection, level, triangleIndex);
@@ -122,6 +123,7 @@ Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint){
 Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector) {
 	Vec3Df reflection = Vec3Df(0, 0, 0);
 	reflection = lightDirection - 2 * (Vec3Df::dotProduct(lightDirection, normalVector) / pow(normalVector.getLength(), 2))*normalVector;
+	return reflection;
 }
 // We can also add textures!
 
