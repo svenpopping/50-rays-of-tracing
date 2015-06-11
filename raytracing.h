@@ -28,6 +28,8 @@ void init();
 void produceRay(int x_I, int y_I, Vec3Df & origin, Vec3Df & dest);
 
 
+bool rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0, const Vec3Df v1, const Vec3Df v2,float &t);
+
 //your main function to rewrite
 Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest);
 
