@@ -2,6 +2,11 @@
 .ds_store
 config.h
 
+# Main executable
+/50_rays_of_tracing
+# Result image
+result.ppm
+
 # Compiled Object files
 *.slo
 *.lo
