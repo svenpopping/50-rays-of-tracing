@@ -31,3 +31,4 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 $(SRCDIR)/raytracing.cpp: $(INCDIR)/raytracing.h
 $(SRCDIR)/main.cpp: $(INCDIR)/raytracing.h $(INCDIR)/mesh.h $(INCDIR)/traqueboule.h $(INCDIR)/imageWriter.h
 $(SRCDIR)/mesh.cpp: $(INCDIR)/mesh.h
+$(INCDIR)/raytracing.h: ./config.h
