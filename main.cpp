@@ -8,7 +8,7 @@
 #include <GL/glut.h>
 #endif
 
-
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
@@ -58,7 +58,6 @@ void animate()
 }
 
 
-
 void display(void);
 void reshape(int w, int h);
 void keyboard(unsigned char key, int x, int y);
@@ -68,64 +67,73 @@ void keyboard(unsigned char key, int x, int y);
  */
 int main(int argc, char** argv)
 {
-    glutInit(&argc, argv);
+    char const* runLocal = getenv( "RUN_LOCAL" );
 
-    //framebuffer setup
-    glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH );
+    if (runLocal) {
+      std::cout<<" Running the headless build script "<<std::endl;
 
-    // positioning and size of window
-    glutInitWindowPosition(200, 100);
-    glutInitWindowSize(WindowSize_X,WindowSize_Y);
-    glutCreateWindow(argv[0]);	
+    } else {
+      std::cout<<" Running the OpenGL build script "<<std::endl;
 
-    //initialize viewpoint
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glTranslatef(0,0,-4);
-    tbInitTransform();     // This is for the trackball, please ignore
-    tbHelp();             // idem
-	MyCameraPosition=getCameraPosition();
+      glutInit(&argc, argv);
 
-	//activate the light following the camera
-    glEnable( GL_LIGHTING );
-    glEnable( GL_LIGHT0 );
-    glEnable(GL_COLOR_MATERIAL);
-    int LightPos[4] = {0,0,2,0};
-    int MatSpec [4] = {1,1,1,1};
-    glLightiv(GL_LIGHT0,GL_POSITION,LightPos);
+      //framebuffer setup
+      glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH );
 
-	//normals will be normalized in the graphics pipeline
-	glEnable(GL_NORMALIZE);
-    //clear color of the background is black.
-	glClearColor (0.0, 0.0, 0.0, 0.0);
+      // positioning and size of window
+      glutInitWindowPosition(200, 100);
+      glutInitWindowSize(WindowSize_X,WindowSize_Y);
+      glutCreateWindow(argv[0]);	
 
-	
-	// Activate rendering modes
-    //activate depth test
-	glEnable( GL_DEPTH_TEST ); 
-    //draw front-facing triangles filled
-	//and back-facing triangles as wires
-    glPolygonMode(GL_FRONT,GL_FILL);
-    glPolygonMode(GL_BACK,GL_LINE);
-    //interpolate vertex colors over the triangles
-	glShadeModel(GL_SMOOTH);
+      //initialize viewpoint
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity();
+      glTranslatef(0,0,-4);
+      tbInitTransform();     // This is for the trackball, please ignore
+      tbHelp();             // idem
+    	MyCameraPosition=getCameraPosition();
+
+    	//activate the light following the camera
+        glEnable( GL_LIGHTING );
+        glEnable( GL_LIGHT0 );
+        glEnable(GL_COLOR_MATERIAL);
+        int LightPos[4] = {0,0,2,0};
+        int MatSpec [4] = {1,1,1,1};
+        glLightiv(GL_LIGHT0,GL_POSITION,LightPos);
+
+    	//normals will be normalized in the graphics pipeline
+    	glEnable(GL_NORMALIZE);
+        //clear color of the background is black.
+    	glClearColor (0.0, 0.0, 0.0, 0.0);
+
+    	
+    	// Activate rendering modes
+        //activate depth test
+    	glEnable( GL_DEPTH_TEST ); 
+        //draw front-facing triangles filled
+    	//and back-facing triangles as wires
+        glPolygonMode(GL_FRONT,GL_FILL);
+        glPolygonMode(GL_BACK,GL_LINE);
+        //interpolate vertex colors over the triangles
+    	glShadeModel(GL_SMOOTH);
 
 
-	// glut setup... to ignore
-    glutReshapeFunc(reshape);
-    glutKeyboardFunc(keyboard);
-    glutDisplayFunc(display);
-    glutMouseFunc(tbMouseFunc);    // trackball
-    glutMotionFunc(tbMotionFunc);  // uses mouse
-    glutIdleFunc( animate);
+    	// glut setup... to ignore
+      glutReshapeFunc(reshape);
+      glutKeyboardFunc(keyboard);
+      glutDisplayFunc(display);
+      glutMouseFunc(tbMouseFunc);    // trackball
+      glutMotionFunc(tbMotionFunc);  // uses mouse
+      glutIdleFunc( animate);
 
 
-	init();
+      init();
 
-    
-	//main loop for glut... this just runs your application
-    glutMainLoop();
-        
+      
+      //main loop for glut... this just runs your application
+      glutMainLoop();  
+    }
+
     return 0;  // execution never reaches this point
 }
 
