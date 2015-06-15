@@ -11,7 +11,6 @@
 
 #include "raytracing.h"
 
-
 //temporary variables
 //these are only used to illustrate 
 //a simple debug drawing. A ray 
@@ -80,8 +79,9 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	Vec3Df lightDirection = Vec3Df(0, 0, 0);
-	lightDirection = lightVector(intersection, dir);
-	color += diffuse(intersection, N, triangleIndex);
+	lightDirection = lightVector(intersection, MyLightPositions.at(0));
+	Vec3Df lightN = lightDirection / pow(lightDirection.getLength(), 2);
+	color += diffuse(lightN, N, triangleIndex);
 	color += ambient(dir, intersection, level, triangleIndex);
 	color += speculair(dir, intersection, level, triangleIndex);
 	return color;
@@ -90,13 +90,19 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
 Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
+
+	// Probably split into RGB values of the material
 	color = MyMesh.materials.at(triMat).Kd();
 
 	// diffuser = Kd * dot(lightsource, normal) * Od * Ld
 	// Od = object color
 	// Ld = lightSource color
-	Vec3Df diffuser = color * (Vec3Df::dotProduct(lightSource, normal)) / pow(normal.getLength(), 2) * 1 * 1;
+	Vec3Df normalizedn = normal / pow(normal.getLength(), 2);
+	Vec3Df diffuser = Vec3Df(0, 0, 0);
+	diffuser = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normalizedn));
+	std::cout << "diffuser values: " << diffuser[0] << " ===== " << diffuser[1] << " ===== " << diffuser[2] << std::endl;
 	return diffuser;
+
 }
 
 Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){  
@@ -106,11 +112,11 @@ Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int trian
 	// where Ka is surface property, Ia is light property
 
 	Vec3Df ka = MyMesh.materials.at(triMat).Ka();
-	std::cout << "Mesh properties are : " << ka[0] << "," << ka[1] << "," << ka[2] << std::endl;
+	//std::cout << "Mesh properties are : " << ka[0] << "," << ka[1] << "," << ka[2] << std::endl;
 	// the Ka mesh properties of cube.obj and wollahberggeit.obj are 0?
 
 	//color = MyMesh.materials.at(triMat).Ka();
-	return color;
+	return ka;
 }
 
 Vec3Df speculair(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
@@ -122,7 +128,7 @@ Vec3Df speculair(const Vec3Df dir, const Vec3Df intersection, int level, int tri
 
 Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint){
 	Vec3Df lightDir = Vec3Df(0, 0, 0);
-	lightDir = point - lightPoint;
+	lightDir = lightPoint - point;
 	return lightDir;
 }
 
