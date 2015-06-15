@@ -10,6 +10,7 @@
 #endif
 
 #include "raytracing.h"
+#include "helper.h"
 
 
 //temporary variables
@@ -268,7 +269,9 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
 	testRayDestination = rayDestination;
 	testColor = performRayTracing(rayOrigin, rayDestination);
 
-	std::cout << " The color from the ray is " << testColor[0] << "," << testColor[1] << "," << testColor[2] << std::endl;
+	std::cout << " The color from the ray is: ";
+  printVector(testColor);
+  std::cout << std::endl;
 	// do here, whatever you want with the keyboard input t.
 
 	//      Trace(0, ray, &color);
