@@ -77,15 +77,16 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(0));
-	Vec3Df lightN = lightDirection / pow(lightDirection.getLength(), 2);
-	Vec3Df normalN = N / pow(N.getLength(), 2);
+	Vec3Df lightN = lightDirection / lightDirection.getLength();
+	Vec3Df normalN = N / N.getLength();
 	Vec3Df viewDirection = MyCameraPosition - intersection;
-	Vec3Df viewDirectionN = viewDirection / pow(viewDirection.getLength(), 2);
+	Vec3Df viewDirectionN = viewDirection / viewDirection.getLength();
 	Vec3Df reflection = reflectionVector(lightN, normalN);
-	Vec3Df reflectionN = reflection / pow(reflection.getLength(), 2);
+	Vec3Df reflectionN = reflection / reflection.getLength();
 	color += diffuse(lightN, normalN, triangleIndex);
 	color += ambient(dir, intersection, level, triangleIndex);
 	color += speculair(reflectionN, viewDirectionN, triangleIndex);
+
 	if (color[0] > 1)
 		color[0] = 1;
 	if (color[1] > 1)
@@ -104,6 +105,7 @@ Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex)
 
 	// Od = object color
 	// Ld = lightSource color
+	std::cout << "dotProduct diffuse " << Vec3Df::dotProduct(lightSource, normal) << std::endl;
 	color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
 	return color;
 }
