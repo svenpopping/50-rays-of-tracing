@@ -62,15 +62,12 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	for (int i = 0; i < MyMesh.triangles.size(); i++){
 		Triangle triangle = MyMesh.triangles.at(i);
-		Vertex v0 = MyMesh.vertices.at(triangle.v[0]);
-		Vertex v1 = MyMesh.vertices.at(triangle.v[1]);
-		Vertex v2 = MyMesh.vertices.at(triangle.v[2]);
 
 		Vec3Df N = Vec3Df(0, 0, 0);
-		Vec3Df intersection = rayTriangleIntersect(origin, dir, v0.p, v1.p, v2.p, depth, N);
+		Vec3Df intersection = rayTriangleIntersect(origin, dir, triangle, depth);
 		if (!isNulVector(intersection)){
 			// save color and depth
-			color = shade(dir, intersection, level, i, N);
+			color = shade(dir, intersection, level, i, getNormal(triangle));
 		}
 
 
@@ -130,21 +127,21 @@ Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector) 
 // The source of this function is:
 // http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 // Returns the point of intersection
-Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0, const Vec3Df v1, const Vec3Df v2, float &depth, Vec3Df &N)
+Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Triangle triangle, float &depth)
 {
-	Vec3Df nulVector = Vec3Df(0, 0, 0);
 	// compute plane's normal
-	Vec3Df v0v1 = v1 - v0;
-	Vec3Df v0v2 = v2 - v0;
-	// no need to normalize
-	N = Vec3Df::crossProduct(v0v1, v0v2); // N
+  Vec3Df N = getNormal(triangle);
+
+  Vec3Df v0 = MyMesh.vertices.at(triangle.v[0]).p;
+  Vec3Df v1 = MyMesh.vertices.at(triangle.v[1]).p;
+  Vec3Df v2 = MyMesh.vertices.at(triangle.v[2]).p;
 
 	// Step 1: finding P (the point where the ray intersects the plane)
 
 	// check if ray and plane are parallel ?
 	float NdotRayDirection = Vec3Df::dotProduct(N, dir);
 	if (fabs(NdotRayDirection) < 0.000000001) // almost 0
-		return nulVector; // they are parallel so they don't intersect !
+		return nullVector(); // they are parallel so they don't intersect !
 
 	// compute d parameter using equation 2 (d is the distance from the origin (0, 0, 0) to the plane)
 	float d = Vec3Df::dotProduct(N, v0);
@@ -152,8 +149,8 @@ Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df 
 	// compute t (equation 3) (t is distance from the ray origin to P)
 	float t = (-Vec3Df::dotProduct(N, orig) + d) / NdotRayDirection;
 	// check if the triangle is in behind the ray
-	if (t < 0) return nulVector; // the triangle is behind
-	if (t > depth) return nulVector; // already have something closerby
+	if (t < 0) return nullVector(); // the triangle is behind
+	if (t > depth) return nullVector(); // already have something closerby
 
 	// compute the intersection point P using equation 1
 	Vec3Df P = orig + t * dir;
@@ -165,19 +162,19 @@ Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df 
 	Vec3Df edge0 = v1 - v0;
 	Vec3Df vp0 = P - v0;
 	C = Vec3Df::crossProduct(edge0, vp0);
-	if (Vec3Df::dotProduct(N, C) < 0) return nulVector; // P is on the right side
+	if (Vec3Df::dotProduct(N, C) < 0) return nullVector(); // P is on the right side
 
 	// edge 1
 	Vec3Df edge1 = v2 - v1;
 	Vec3Df vp1 = P - v1;
 	C = Vec3Df::crossProduct(edge1, vp1);
-	if (Vec3Df::dotProduct(N, C) < 0) return nulVector; // P is on the right side
+	if (Vec3Df::dotProduct(N, C) < 0) return nullVector(); // P is on the right side
 
 	// edge 2
 	Vec3Df edge2 = v0 - v2;
 	Vec3Df vp2 = P - v2;
 	C = Vec3Df::crossProduct(edge2, vp2);
-	if (Vec3Df::dotProduct(N, C) < 0) return nulVector; // P is on the right side;
+	if (Vec3Df::dotProduct(N, C) < 0) return nullVector(); // P is on the right side;
 
 	depth = t;
 	return P; // this is the intersectionpoint
@@ -278,11 +275,6 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
 	//      PutPixel(x, y, color);
 
 	std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
-}
-
-bool isNulVector(Vec3Df vector){
-	Vec3Df nullVector = Vec3Df(0, 0, 0);
-	return vector == nullVector;
 }
 
 
