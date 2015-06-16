@@ -69,8 +69,6 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 			// save color and depth
 			color = shade(dir, intersection, level, i, getNormal(triangle));
 		}
-
-
 	}
 	return color;
 }
@@ -117,11 +115,12 @@ Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint){
 	return lightDir;
 }
 
-Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector) {
+Vec3Df reflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector) {
 	Vec3Df reflection = Vec3Df(0, 0, 0);
-	reflection = lightDirection - 2 * (Vec3Df::dotProduct(lightDirection, normalVector) / pow(normalVector.getLength(), 2))*normalVector;
+	reflection = viewDirection - 2 * (Vec3Df::dotProduct(viewDirection, normalVector) / pow(normalVector.getLength(), 2))*normalVector;
 	return reflection;
 }
+
 // We can also add textures!
 
 // The source of this function is:
