@@ -12,7 +12,6 @@
 #include "raytracing.h"
 #include "helper.h"
 
-
 //temporary variables
 //these are only used to illustrate 
 //a simple debug drawing. A ray 
@@ -62,15 +61,12 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	for (int i = 0; i < MyMesh.triangles.size(); i++){
 		Triangle triangle = MyMesh.triangles.at(i);
-		Vertex v0 = MyMesh.vertices.at(triangle.v[0]);
-		Vertex v1 = MyMesh.vertices.at(triangle.v[1]);
-		Vertex v2 = MyMesh.vertices.at(triangle.v[2]);
 
 		Vec3Df N = Vec3Df(0, 0, 0);
-		Vec3Df intersection = rayTriangleIntersect(origin, dir, v0.p, v1.p, v2.p, depth, N);
+		Vec3Df intersection = rayTriangleIntersect(origin, dir, triangle, depth);
 		if (!isNulVector(intersection)){
 			// save color and depth
-			color = shade(dir, intersection, level, i, N);
+			color = shade(dir, intersection, level, i, getNormal(triangle));
 		}
 
 
@@ -80,37 +76,59 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 
 Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
 	Vec3Df color = Vec3Df(0, 0, 0);
-	Vec3Df lightDirection = Vec3Df(0, 0, 0);
-	//lightDirection = lightVector(intersection, origin);
-	color += diffuse(dir, N, triangleIndex);
+	Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(0));
+	Vec3Df lightN = lightDirection / lightDirection.getLength();
+	Vec3Df normalN = N / N.getLength();
+	Vec3Df viewDirection = MyCameraPosition - intersection;
+	Vec3Df viewDirectionN = viewDirection / viewDirection.getLength();
+	Vec3Df reflection = reflectionVector(lightN, normalN);
+	Vec3Df reflectionN = reflection / reflection.getLength();
+	color += diffuse(lightN, normalN, triangleIndex);
 	color += ambient(dir, intersection, level, triangleIndex);
-	color += speculair(dir, intersection, level, triangleIndex);
+	color += speculair(reflectionN, viewDirectionN, triangleIndex);
+
+	if (color[0] > 1)
+		color[0] = 1;
+	if (color[1] > 1)
+		color[1] = 1;
+	if (color[2] > 1)
+		color[2] = 1;
 	return color;
 }
 
 Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
+
+	// Probably split into RGB values of the material
 	color = MyMesh.materials.at(triMat).Kd();
 
-	// diffuser = Kd * dot(lightsource, normal) * Od * Ld
 	// Od = object color
 	// Ld = lightSource color
-	//Vec3Df diffuser = color * (Vec3Df::dotProduct(lightSource, normal)) / pow(normal.getLength(), 2) * 1 * 1;
+	std::cout << "dotProduct diffuse " << Vec3Df::dotProduct(lightSource, normal) << std::endl;
+	color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
 	return color;
 }
 
-Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
+Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){  
 	Vec3Df color = Vec3Df(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-	color = MyMesh.materials.at(triMat).Ka();
-	return color;
+	// ambient = Ka * Ia
+	// where Ka is surface property, Ia is light property
+
+	Vec3Df ka = MyMesh.materials.at(triMat).Ka();
+	//std::cout << "Mesh properties are : " << ka[0] << "," << ka[1] << "," << ka[2] << std::endl;
+	// the Ka mesh properties of cube.obj and wollahberggeit.obj are 0?
+
+	//color = MyMesh.materials.at(triMat).Ka();
+	return ka;
 }
 
-Vec3Df speculair(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
+Vec3Df speculair(const Vec3Df reflection, const Vec3Df viewDirection, int triangleIndex){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 	color = MyMesh.materials.at(triMat).Ks();
+	color = color * pow(std::fmax(Vec3Df::dotProduct(reflection, viewDirection), 0.0), 0.3);
 	return color;
 }
 
@@ -122,7 +140,7 @@ Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint){
 
 Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector) {
 	Vec3Df reflection = Vec3Df(0, 0, 0);
-	reflection = lightDirection - 2 * (Vec3Df::dotProduct(lightDirection, normalVector) / pow(normalVector.getLength(), 2))*normalVector;
+	reflection = lightDirection - 2 * (Vec3Df::dotProduct(lightDirection, normalVector) )*normalVector;
 	return reflection;
 }
 // We can also add textures!
@@ -130,21 +148,21 @@ Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector) 
 // The source of this function is:
 // http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 // Returns the point of intersection
-Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0, const Vec3Df v1, const Vec3Df v2, float &depth, Vec3Df &N)
+Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Triangle triangle, float &depth)
 {
-	Vec3Df nulVector = Vec3Df(0, 0, 0);
 	// compute plane's normal
-	Vec3Df v0v1 = v1 - v0;
-	Vec3Df v0v2 = v2 - v0;
-	// no need to normalize
-	N = Vec3Df::crossProduct(v0v1, v0v2); // N
+  Vec3Df N = getNormal(triangle);
+
+  Vec3Df v0 = MyMesh.vertices.at(triangle.v[0]).p;
+  Vec3Df v1 = MyMesh.vertices.at(triangle.v[1]).p;
+  Vec3Df v2 = MyMesh.vertices.at(triangle.v[2]).p;
 
 	// Step 1: finding P (the point where the ray intersects the plane)
 
 	// check if ray and plane are parallel ?
 	float NdotRayDirection = Vec3Df::dotProduct(N, dir);
 	if (fabs(NdotRayDirection) < 0.000000001) // almost 0
-		return nulVector; // they are parallel so they don't intersect !
+		return nullVector(); // they are parallel so they don't intersect !
 
 	// compute d parameter using equation 2 (d is the distance from the origin (0, 0, 0) to the plane)
 	float d = Vec3Df::dotProduct(N, v0);
@@ -152,8 +170,8 @@ Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df 
 	// compute t (equation 3) (t is distance from the ray origin to P)
 	float t = (-Vec3Df::dotProduct(N, orig) + d) / NdotRayDirection;
 	// check if the triangle is in behind the ray
-	if (t < 0) return nulVector; // the triangle is behind
-	if (t > depth) return nulVector; // already have something closerby
+	if (t < 0) return nullVector(); // the triangle is behind
+	if (t > depth) return nullVector(); // already have something closerby
 
 	// compute the intersection point P using equation 1
 	Vec3Df P = orig + t * dir;
@@ -165,19 +183,19 @@ Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df 
 	Vec3Df edge0 = v1 - v0;
 	Vec3Df vp0 = P - v0;
 	C = Vec3Df::crossProduct(edge0, vp0);
-	if (Vec3Df::dotProduct(N, C) < 0) return nulVector; // P is on the right side
+	if (Vec3Df::dotProduct(N, C) < 0) return nullVector(); // P is on the right side
 
 	// edge 1
 	Vec3Df edge1 = v2 - v1;
 	Vec3Df vp1 = P - v1;
 	C = Vec3Df::crossProduct(edge1, vp1);
-	if (Vec3Df::dotProduct(N, C) < 0) return nulVector; // P is on the right side
+	if (Vec3Df::dotProduct(N, C) < 0) return nullVector(); // P is on the right side
 
 	// edge 2
 	Vec3Df edge2 = v0 - v2;
 	Vec3Df vp2 = P - v2;
 	C = Vec3Df::crossProduct(edge2, vp2);
-	if (Vec3Df::dotProduct(N, C) < 0) return nulVector; // P is on the right side;
+	if (Vec3Df::dotProduct(N, C) < 0) return nullVector(); // P is on the right side;
 
 	depth = t;
 	return P; // this is the intersectionpoint
@@ -278,11 +296,6 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
 	//      PutPixel(x, y, color);
 
 	std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
-}
-
-bool isNulVector(Vec3Df vector){
-	Vec3Df nullVector = Vec3Df(0, 0, 0);
-	return vector == nullVector;
 }
 
 

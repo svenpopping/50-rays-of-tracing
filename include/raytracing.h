@@ -27,7 +27,8 @@ void init();
 void produceRay(int x_I, int y_I, Vec3Df & origin, Vec3Df & dest);
 
 
-Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Vec3Df v0, const Vec3Df v1, const Vec3Df v2, float &depth, Vec3Df &N);
+Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Triangle triangle, float &depth);
+
 
 //your main function to rewrite
 Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest);
@@ -44,10 +45,8 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
 Vec3Df shade(const Vec3Df origin, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N);
 Vec3Df diffuse(const Vec3Df light, const Vec3Df N, int triangleIndex);
 Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex);
-Vec3Df speculair(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex);
+Vec3Df speculair(const Vec3Df reflectionN, const Vec3Df viewDirectionN, int triangleIndex);
 Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint);
 Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector);
-
-bool isNulVector(Vec3Df vector);
 
 #endif
