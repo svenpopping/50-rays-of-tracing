@@ -11,6 +11,7 @@
 
 #include "raytracing.h"
 #include "helper.h"
+#include "shadowmap.h"
 
 //temporary variables
 //these are only used to illustrate 
@@ -18,7 +19,7 @@
 Vec3Df testRayOrigin;
 Vec3Df testRayDestination;
 Vec3Df testColor;
-
+Shadowmap shadowmap;
 
 //use this function for any preprocessing of the mesh.
 void init()
