@@ -1,0 +1,53 @@
+# Auto-generated files.
+.DS_Store
+thumbs.db
+
+# Local configuration.
+config.h
+
+# Main executable.
+/50_rays_of_tracing
+# Result image.
+/result.ppm
+
+# Object files.
+*.o
+
+# XCode projects.
+*/*.xcodeproj/*
+
+# Visual Studio projects.
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+!/obj/.gitkeep
+[Oo]bj/
+.vs/
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+TestResult.xml
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+ipch/
+*.aps
+*.ncb
+*.opensdf
+*.sdf
+*.cachefile
+*.psess
+*.vsp
+*.vspx
+*.[Cc]ache
+!*.[Cc]ache/
