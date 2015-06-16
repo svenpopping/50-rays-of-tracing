@@ -68,19 +68,15 @@ void startRaytracing();
  */
 int main(int argc, char** argv)
 {
-    char const* runLocal = getenv( "RUN_LOCAL" );
-
     glutInit(&argc, argv);
 
     //framebuffer setup
     glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH );
 
-    if (!runLocal) {
-      // positioning and size of window
-      glutInitWindowPosition(200, 100);
-      glutInitWindowSize(WindowSize_X,WindowSize_Y);
-      glutCreateWindow(argv[0]);  
-    }
+    // positioning and size of window
+    glutInitWindowPosition(200, 100);
+    glutInitWindowSize(WindowSize_X,WindowSize_Y);
+    glutCreateWindow(argv[0]);  
 
     //initialize viewpoint
     glMatrixMode(GL_MODELVIEW);
@@ -126,21 +122,13 @@ int main(int argc, char** argv)
 
     init();
 
-    if (runLocal) {
-      std::cout<<" Running the headless build script "<<std::endl;
-
-      cout<<"Raytracing..."<<endl;
-      startRaytracing();
-
-    } else {
-      std::cout<<" Running the OpenGL build script "<<std::endl;
-
-
-      
-      //main loop for glut... this just runs your application
-      glutMainLoop();  
-    }
-
+#if defined(FIFTYRAYS_ONLYTRACE)
+    startRaytracing();
+#else    
+	//main loop for glut... this just runs your application
+    glutMainLoop();
+#endif
+   
     return 0;  // execution never reaches this point
 }
 
