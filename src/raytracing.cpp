@@ -136,7 +136,7 @@ Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint){
 
 Vec3Df reflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector) {
 	Vec3Df reflection = Vec3Df(0, 0, 0);
-	reflection = viewDirection - 2 * (Vec3Df::dotProduct(viewDirection, normalVector) )*normalVector;
+	reflection = viewDirection - 2 * Vec3Df::dotProduct(viewDirection, normalVector) * normalVector;
 	return reflection;
 }
 

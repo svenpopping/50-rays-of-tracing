@@ -140,8 +140,8 @@ public:
     };
 
     /// Return length after normalization
-    inline Vec3D getNormalized (void) {
-        Vec3D length = getLength();
+    inline Vec3D getNormalized (void) const {
+        T length = getLength();
         return (*this / length);
     };
 
