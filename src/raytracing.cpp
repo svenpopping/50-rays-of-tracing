@@ -44,16 +44,7 @@ void init()
 //return the color of your pixel.
 Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 {
-	int level = 0;
-	return trace(origin, dest, level);
-
-	//  if(intersect(level, ray, max, &hit)) {
-	//    Shade(level, hit, &color);
-	//  }
-	//  else
-	//    color=BackgroundColor
-
-	//return Vec3Df(dest[0],dest[1],dest[2]);
+	return trace(origin, dest, 0);
 }
 
 Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
@@ -107,7 +98,6 @@ Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex)
 
 	// Od = object color
 	// Ld = lightSource color
-	std::cout << "dotProduct diffuse " << Vec3Df::dotProduct(lightSource, normal) << std::endl;
 	color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
 	return color;
 }
@@ -119,7 +109,6 @@ Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int trian
 	// where Ka is surface property, Ia is light property
 
 	Vec3Df ka = MyMesh.materials.at(triMat).Ka();
-	//std::cout << "Mesh properties are : " << ka[0] << "," << ka[1] << "," << ka[2] << std::endl;
 	// the Ka mesh properties of cube.obj and wollahberggeit.obj are 0?
 
 	//color = MyMesh.materials.at(triMat).Ka();
