@@ -124,7 +124,6 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
     // Probably wont change the medium, but maybe for future improvement.
     int n1 = 1; // Index of refraction of current medium
     int n2 = 1; // Index of refraction of new medium
-    int n = n1/n2;
     
     // Calculate dot product from normal vector N (of the surface) and direction vector V(of the incoming ray)
     Triangle triangle = MyMesh.triangles.at(triangleIndex);
@@ -132,13 +131,12 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
 
     int c = Vec3Df::dotProduct(N, dir);
     
-    int c2 = sqrt(1 - pow(n, 2) * (1 - pow(c, 2)));
+    int c2 = sqrt(1 - (pow(n1, 2) * (1 - pow(c, 2)))/pow(n2, 2));
     
-    Vec3Df refractedRay = (n * dir) + (n * c - c2) * N;
+    Vec3Df refractedRay = n1/n2 * (dir - c * N) - N * c2 ;
     
     Vec3Df color = trace(intersection, refractedRay, level + 1);
     
-    std::cout << material.Tr() << std::endl;
     printVector(dir);
     printVector(intersection);
     return color;
