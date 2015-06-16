@@ -6,6 +6,7 @@ thumbs.db
 config.h
 
 # Main executable.
+/a.out
 /raytracing
 /50_rays_of_tracing
 # Result image.
