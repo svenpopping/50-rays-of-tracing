@@ -8,6 +8,8 @@
 #include <GL/glut.h>
 #endif
 
+#include <time.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -279,5 +281,7 @@ void startRaytracing() {
       result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
     }
 
-  result.writeImage("result.ppm");
+  char filename[64];
+  snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
+  result.writeImage(filename);
 }
