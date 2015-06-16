@@ -1,2 +1,2 @@
 #pragma once
-#define FILE_LOCATION "models/wollahberggeit.obj"
+#define FILE_LOCATION "models/sphere.obj"
