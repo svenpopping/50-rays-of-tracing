@@ -45,8 +45,9 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
 Vec3Df shade(const Vec3Df origin, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N);
 Vec3Df diffuse(const Vec3Df light, const Vec3Df N, int triangleIndex);
 Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex);
-Vec3Df speculair(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex);
+Vec3Df speculair(const Vec3Df reflectionN, const Vec3Df viewDirectionN, int triangleIndex);
 Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint);
+
 
 // Reflection functions
 Vec3Df reflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector);
