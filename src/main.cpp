@@ -263,6 +263,8 @@ void startRaytracing() {
 
   
   for (unsigned int y=0; y<WindowSize_Y;++y)
+  {
+    std::cout << "Tracing row " << y + 1 << "/" << WindowSize_Y << "..." << std::endl;
     for (unsigned int x=0; x<WindowSize_X;++x)
     {
       //produce the rays for each pixel, by interpolating 
@@ -284,4 +286,5 @@ void startRaytracing() {
   char filename[64];
   snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
   result.writeImage(filename);
+  }
 }
