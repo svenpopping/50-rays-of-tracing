@@ -138,6 +138,13 @@ public:
     inline T getLength() const {
         return (T)sqrt (getSquaredLength());
     };
+
+    /// Return length after normalization
+    inline Vec3D getNormalized (void) {
+        Vec3D length = getLength();
+        return (*this / length);
+    };
+
     /// Return length after normalization
     inline T normalize (void) {
         T length = getLength();
