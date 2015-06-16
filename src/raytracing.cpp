@@ -19,6 +19,13 @@ Vec3Df testRayOrigin;
 Vec3Df testRayDestination;
 Vec3Df testColor;
 
+std::vector<Vec3Df> rayOrigins;
+std::vector<Vec3Df> rayIntersections;
+std::vector<Vec3Df> rayColors;
+
+bool debug;
+
+
 
 //use this function for any preprocessing of the mesh.
 void init()
@@ -50,18 +57,25 @@ Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 	float depth = FLT_MAX;
 	Vec3Df color = Vec3Df(0, 0, 0);
+  Vec3Df debugIntersection = dir;
 	for (int i = 0; i < MyMesh.triangles.size(); i++){
 		Triangle triangle = MyMesh.triangles.at(i);
 
-		Vec3Df N = Vec3Df(0, 0, 0);
 		Vec3Df intersection = rayTriangleIntersect(origin, dir, triangle, depth);
 		if (!isNulVector(intersection)){
+      if(debug){
+        debugIntersection = intersection;
+      }
 			// save color and depth
 			color = shade(dir, intersection, level, i, getNormal(triangle));
 		}
 
-
 	}
+  if(debug){
+    rayOrigins.push_back(origin);
+    rayIntersections.push_back(debugIntersection);
+    rayColors.push_back(color);
+  }
 	return color;
 }
 
@@ -230,12 +244,28 @@ void yourDebugDraw()
 	//as an example: we draw the test ray, which is set by the keyboard function
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glDisable(GL_LIGHTING);
-	glBegin(GL_LINES);
-	glColor3f(testColor[0], testColor[1], testColor[2]);
-	glVertex3f(testRayOrigin[0], testRayOrigin[1], testRayOrigin[2]);
-	glColor3f(testColor[0], testColor[1], testColor[2]);
-	glVertex3f(testRayDestination[0], testRayDestination[1], testRayDestination[2]);
-	glEnd();
+  
+  //Show rays
+  for(std::vector<Vec3Df>::size_type i = 0; i != rayColors.size(); i++) {
+    Vec3Df color = rayColors.at(i);
+    Vec3Df origin = rayOrigins.at(i);
+    Vec3Df intersection = rayIntersections.at(i);
+    
+    glBegin(GL_LINES);
+    glColor3f(color[0], color[1], color[2]);
+    glVertex3f(origin[0], origin[1], origin[2]);
+    glColor3f(color[0], color[1], color[2]);
+    glVertex3f(intersection[0], intersection[1], intersection[2]);
+    glEnd();
+    
+    glPointSize(3);
+    glBegin(GL_POINTS);
+    glVertex3fv(intersection.pointer());
+    glEnd();
+  }
+	
+  
+  // Show light positions
 	glPointSize(10);
 	glBegin(GL_POINTS);
 	glVertex3fv(MyLightPositions[0].pointer());
@@ -274,10 +304,14 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
 	//here, as an example, I use the ray to fill in the values for my upper global ray variable
 	//I use these variables in the debugDraw function to draw the corresponding ray.
 	//try it: Press a key, move the camera, see the ray that was launched as a line.
-	testRayOrigin = rayOrigin;
+	
+  debug = true;
+  testRayOrigin = rayOrigin;
 	testRayDestination = rayDestination;
 	testColor = performRayTracing(rayOrigin, rayDestination);
+  debug = false;
 
+  
 	std::cout << " The color from the ray is: ";
   printVector(testColor);
   std::cout << std::endl;
