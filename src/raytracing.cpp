@@ -19,7 +19,16 @@
 Vec3Df testRayOrigin;
 Vec3Df testRayDestination;
 Vec3Df testColor;
-Shadowmap shadowmap;
+Shadowmap map;
+const unsigned int x = 800, y = 800;
+
+Vec3Df lightpos00, lightdest00;
+Vec3Df lightpos01, lightdest01;
+Vec3Df lightpos10, lightdest10;
+Vec3Df lightpos11, lightdest11;
+Vec3Df lightpos, lightdest;
+
+Vec3Df lp = MyLightPositions.at(0);
 
 //use this function for any preprocessing of the mesh.
 void init()
@@ -40,6 +49,14 @@ void init()
 	//at least ONE light source has to be in the scene!!!
 	//here, we set it to the current location of the camera
 	MyLightPositions.push_back(MyCameraPosition);
+
+	map = fillMap(x, y, MyLightPositions.at(0));
+
+
+	produceShadowRay(0, 0, &lightpos00, &lightdest00);
+	produceShadowRay(0, y - 1, &lightpos01, &lightdest01);
+	produceShadowRay(x - 1, 0, &lightpos10, &lightdest10);
+	produceShadowRay(x - 1, y - 1, &lightpos11, &lightdest11);
 }
 
 //return the color of your pixel.
@@ -57,6 +74,19 @@ Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 	//return Vec3Df(dest[0],dest[1],dest[2]);
 }
 
+bool inShadow(const Vec3Df & intersectP) {
+	float depthtolight = Vec3Df::dotProduct(intersectP, lp);
+	Vec3Df mapPoint = Vec3Df(0, 0, 0);
+
+	float xpos = 0.0;
+
+	float ypos = (lp - ((xpos*lightpos01) + (1 - xpos)*lightpos11)) / (xpos*lightpos00 + ((1 - xpos)*lightpos10)) - ();
+
+	return (depthtolight > map.getDepth((1-(x*xpos)), (1-(y*ypos))));
+
+
+}
+
 Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 	float depth = FLT_MAX;
 	Vec3Df color = Vec3Df(0, 0, 0);
@@ -67,10 +97,13 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 		Vec3Df intersection = rayTriangleIntersect(origin, dir, triangle, depth);
 		if (!isNulVector(intersection)){
 			// save color and depth
-			color = shade(dir, intersection, level, i, getNormal(triangle));
+			if (!inShadow(intersection)) {
+				color = shade(dir, intersection, level, i, getNormal(triangle));
+			}
+			else {
+				color = Vec3Df(0, 0, 0);
+			}
 		}
-
-
 	}
 	return color;
 }
