@@ -137,11 +137,17 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
     Triangle triangle = MyMesh.triangles.at(triangleIndex);
     Vec3Df N = getNormal(triangle);
 
-    int c = Vec3Df::dotProduct(N, dir);
+    int c = Vec3Df::dotProduct(dir, N);
     
-    int c2 = sqrt(1 - (pow(n1, 2) * (1 - pow(c, 2)))/pow(n2, 2));
+    int minplus = 1;
     
-    Vec3Df refractedRay = n1/n2 * (dir - c * N) - N * c2 ;
+    if(c > 0){
+      minplus = -1;
+    }
+    
+    int c2 = sqrt(1 - ((pow(n1, 2) * (1 - pow(c, 2))))/pow(n2, 2));
+    
+    Vec3Df refractedRay = n1/n2 * (dir - c * N) - N * c2 * minplus;
     
     Vec3Df color = trace(intersection, refractedRay, level + 1);
     
