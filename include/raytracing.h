@@ -42,6 +42,7 @@ void yourDebugDraw();
 void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3Df & rayDestination);
 void clearDebugVector();
 void toggleDebug();
+void toggleFillColor();
 
 
 // Shading functions

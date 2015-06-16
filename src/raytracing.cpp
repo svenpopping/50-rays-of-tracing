@@ -222,9 +222,6 @@ void yourDebugDraw()
 	//this function is called every frame
 
 	//let's draw the mesh
-  if(debug){
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  }
 	MyMesh.draw();
 
 	//let's draw the lights in the scene as points
@@ -319,6 +316,10 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
       break;
     case 'c':
       clearDebugVector();
+      break;
+    case 't':
+      toggleFillColor();
+      break;
     default:
       if(debug){
         performRayTracing(rayOrigin, rayDestination);
@@ -343,6 +344,17 @@ void clearDebugVector(){
 
 void toggleDebug(){
   debug = !debug;
+}
+
+void toggleFillColor(){
+  GLint mode[2];
+  glGetIntegerv(GL_POLYGON_MODE, mode);
+  if(mode[0] == GL_FILL){
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  }
+  else {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  }
 }
 
 
