@@ -26,6 +26,20 @@ void printVertex(Vertex vertex){
   std::cout << "]" << std::endl;
 }
 
+// Clamp color between .. and 1
+Vec3Df clamp(Vec3Df vertex) {
+    if(vertex[0] > 1)
+        vertex[0] = 1;
+    
+    if(vertex[1] > 1)
+        vertex[1] = 1;
+    
+    if(vertex[2] > 1)
+        vertex[2] = 1;
+    
+    return vertex;
+}
+
 Vec3Df nullVector(){
   return Vec3Df(0, 0, 0);
 }
@@ -45,5 +59,4 @@ Vec3Df getNormal(Triangle triangle){
   // no need to normalize
   Vec3Df N = Vec3Df::crossProduct(v0v1, v0v2); // N
   return N;
-  
 }
