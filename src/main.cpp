@@ -8,7 +8,7 @@
 #include <GL/glut.h>
 #endif
 
-
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
@@ -58,25 +58,29 @@ void animate()
 }
 
 
-
 void display(void);
 void reshape(int w, int h);
 void keyboard(unsigned char key, int x, int y);
+void startRaytracing();
 
 /**
  * Main Programme
  */
 int main(int argc, char** argv)
 {
+    char const* runLocal = getenv( "RUN_LOCAL" );
+
     glutInit(&argc, argv);
 
     //framebuffer setup
     glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH );
 
-    // positioning and size of window
-    glutInitWindowPosition(200, 100);
-    glutInitWindowSize(WindowSize_X,WindowSize_Y);
-    glutCreateWindow(argv[0]);	
+    if (!runLocal) {
+      // positioning and size of window
+      glutInitWindowPosition(200, 100);
+      glutInitWindowSize(WindowSize_X,WindowSize_Y);
+      glutCreateWindow(argv[0]);  
+    }
 
     //initialize viewpoint
     glMatrixMode(GL_MODELVIEW);
@@ -84,34 +88,34 @@ int main(int argc, char** argv)
     glTranslatef(0,0,-4);
     tbInitTransform();     // This is for the trackball, please ignore
     tbHelp();             // idem
-	MyCameraPosition=getCameraPosition();
+    MyCameraPosition=getCameraPosition();
 
-	//activate the light following the camera
-    glEnable( GL_LIGHTING );
-    glEnable( GL_LIGHT0 );
-    glEnable(GL_COLOR_MATERIAL);
-    int LightPos[4] = {0,0,2,0};
-    int MatSpec [4] = {1,1,1,1};
-    glLightiv(GL_LIGHT0,GL_POSITION,LightPos);
+    //activate the light following the camera
+      glEnable( GL_LIGHTING );
+      glEnable( GL_LIGHT0 );
+      glEnable(GL_COLOR_MATERIAL);
+      int LightPos[4] = {0,0,2,0};
+      int MatSpec [4] = {1,1,1,1};
+      glLightiv(GL_LIGHT0,GL_POSITION,LightPos);
 
-	//normals will be normalized in the graphics pipeline
-	glEnable(GL_NORMALIZE);
-    //clear color of the background is black.
-	glClearColor (0.0, 0.0, 0.0, 0.0);
+    //normals will be normalized in the graphics pipeline
+    glEnable(GL_NORMALIZE);
+      //clear color of the background is black.
+    glClearColor (0.0, 0.0, 0.0, 0.0);
 
-	
-	// Activate rendering modes
-    //activate depth test
-	glEnable( GL_DEPTH_TEST ); 
-    //draw front-facing triangles filled
-	//and back-facing triangles as wires
-    glPolygonMode(GL_FRONT,GL_FILL);
-    glPolygonMode(GL_BACK,GL_LINE);
-    //interpolate vertex colors over the triangles
-	glShadeModel(GL_SMOOTH);
+    
+    // Activate rendering modes
+      //activate depth test
+    glEnable( GL_DEPTH_TEST ); 
+      //draw front-facing triangles filled
+    //and back-facing triangles as wires
+      glPolygonMode(GL_FRONT,GL_FILL);
+      glPolygonMode(GL_BACK,GL_LINE);
+      //interpolate vertex colors over the triangles
+    glShadeModel(GL_SMOOTH);
 
 
-	// glut setup... to ignore
+    // glut setup... to ignore
     glutReshapeFunc(reshape);
     glutKeyboardFunc(keyboard);
     glutDisplayFunc(display);
@@ -120,12 +124,23 @@ int main(int argc, char** argv)
     glutIdleFunc( animate);
 
 
-	init();
+    init();
 
-    
-	//main loop for glut... this just runs your application
-    glutMainLoop();
-        
+    if (runLocal) {
+      std::cout<<" Running the headless build script "<<std::endl;
+
+      cout<<"Raytracing..."<<endl;
+      startRaytracing();
+
+    } else {
+      std::cout<<" Running the OpenGL build script "<<std::endl;
+
+
+      
+      //main loop for glut... this just runs your application
+      glutMainLoop();  
+    }
+
     return 0;  // execution never reaches this point
 }
 
@@ -220,47 +235,9 @@ void keyboard(unsigned char key, int x, int y)
 	case 'r':
 	{
 		//Pressing r will launch the raytracing.
-		cout<<"Raytracing"<<endl;
-				
-
-		//Setup an image with the size of the current image.
-		Image result(WindowSize_X,WindowSize_Y);
+		cout<<"Raytracing..."<<endl;
+    startRaytracing();
 		
-		//produce the rays for each pixel, by first computing
-		//the rays for the corners of the frustum.
-		Vec3Df origin00, dest00;
-		Vec3Df origin01, dest01;
-		Vec3Df origin10, dest10;
-		Vec3Df origin11, dest11;
-		Vec3Df origin, dest;
-
-
-		produceRay(0,0, &origin00, &dest00);
-		produceRay(0,WindowSize_Y-1, &origin01, &dest01);
-		produceRay(WindowSize_X-1,0, &origin10, &dest10);
-		produceRay(WindowSize_X-1,WindowSize_Y-1, &origin11, &dest11);
-
-		
-		for (unsigned int y=0; y<WindowSize_Y;++y)
-			for (unsigned int x=0; x<WindowSize_X;++x)
-			{
-				//produce the rays for each pixel, by interpolating 
-				//the four rays of the frustum corners.
-				float xscale=1.0f-float(x)/(WindowSize_X-1);
-				float yscale=1.0f-float(y)/(WindowSize_Y-1);
-
-				origin=yscale*(xscale*origin00+(1-xscale)*origin10)+
-					(1-yscale)*(xscale*origin01+(1-xscale)*origin11);
-				dest=yscale*(xscale*dest00+(1-xscale)*dest10)+
-					(1-yscale)*(xscale*dest01+(1-xscale)*dest11);
-
-				//launch raytracing for the given ray.
-				Vec3Df rgb = performRayTracing(origin, dest);
-				//store the result in an image 
-				result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
-			}
-
-		result.writeImage("result.ppm");
 		break;
 	}
 	case 27:     // touche ESC
@@ -275,3 +252,44 @@ void keyboard(unsigned char key, int x, int y)
 	yourKeyboardFunc(key,x,y, testRayOrigin, testRayDestination);
 }
 
+
+void startRaytracing() {
+  //Setup an image with the size of the current image.
+  Image result(WindowSize_X,WindowSize_Y);
+  
+  //produce the rays for each pixel, by first computing
+  //the rays for the corners of the frustum.
+  Vec3Df origin00, dest00;
+  Vec3Df origin01, dest01;
+  Vec3Df origin10, dest10;
+  Vec3Df origin11, dest11;
+  Vec3Df origin, dest;
+
+
+  produceRay(0,0, &origin00, &dest00);
+  produceRay(0,WindowSize_Y-1, &origin01, &dest01);
+  produceRay(WindowSize_X-1,0, &origin10, &dest10);
+  produceRay(WindowSize_X-1,WindowSize_Y-1, &origin11, &dest11);
+
+  
+  for (unsigned int y=0; y<WindowSize_Y;++y)
+    for (unsigned int x=0; x<WindowSize_X;++x)
+    {
+      //produce the rays for each pixel, by interpolating 
+      //the four rays of the frustum corners.
+      float xscale=1.0f-float(x)/(WindowSize_X-1);
+      float yscale=1.0f-float(y)/(WindowSize_Y-1);
+
+      origin=yscale*(xscale*origin00+(1-xscale)*origin10)+
+        (1-yscale)*(xscale*origin01+(1-xscale)*origin11);
+      dest=yscale*(xscale*dest00+(1-xscale)*dest10)+
+        (1-yscale)*(xscale*dest01+(1-xscale)*dest11);
+
+      //launch raytracing for the given ray.
+      Vec3Df rgb = performRayTracing(origin, dest);
+      //store the result in an image 
+      result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
+    }
+
+  result.writeImage("result.ppm");
+}

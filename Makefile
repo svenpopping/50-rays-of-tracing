@@ -4,6 +4,7 @@ OBJDIR=obj
 SRCS=\
 	raytracing.cpp \
 	mesh.cpp \
+	helper.cpp \
 	main.cpp
 OBJS=$(foreach S,$(SRCS:.cpp=.o),$(OBJDIR)/$(S))
 BINARY=./50_rays_of_tracing
@@ -21,7 +22,7 @@ clean:
 	rm -f $(BINARY)
 
 $(BINARY): $(OBJS)
-	$(CXX) $(LDFLAGS) $(OBJS) -o $(BINARY)
+	$(CXX) $(OBJS) $(LDFLAGS) -o $(BINARY)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
