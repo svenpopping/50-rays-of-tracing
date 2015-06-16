@@ -26,7 +26,6 @@ std::vector<Vec3Df> rayColors;
 bool debug;
 
 
-
 //use this function for any preprocessing of the mesh.
 void init()
 {
@@ -223,6 +222,9 @@ void yourDebugDraw()
 	//this function is called every frame
 
 	//let's draw the mesh
+  if(debug){
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  }
 	MyMesh.draw();
 
 	//let's draw the lights in the scene as points
@@ -246,6 +248,7 @@ void yourDebugDraw()
 	glDisable(GL_LIGHTING);
   
   //Show rays
+  if(debug){
   for(std::vector<Vec3Df>::size_type i = 0; i != rayColors.size(); i++) {
     Vec3Df color = rayColors.at(i);
     Vec3Df origin = rayOrigins.at(i);
@@ -262,6 +265,7 @@ void yourDebugDraw()
     glBegin(GL_POINTS);
     glVertex3fv(intersection.pointer());
     glEnd();
+  }
   }
 	
   
@@ -298,6 +302,10 @@ void yourDebugDraw()
 //    the target of the ray - see the code above), but once you replaced 
 //    this function and raytracing is in place, it might take a 
 //    while to complete...
+
+// 'd' Toggles the debug view
+// 'c' Adds the option to clear the debugvectors
+
 void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3Df & rayDestination)
 {
 
@@ -305,24 +313,37 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
 	//I use these variables in the debugDraw function to draw the corresponding ray.
 	//try it: Press a key, move the camera, see the ray that was launched as a line.
 	
-  debug = true;
-  testRayOrigin = rayOrigin;
-	testRayDestination = rayDestination;
-	testColor = performRayTracing(rayOrigin, rayDestination);
-  debug = false;
-
+  switch (t) {
+    case 'd':
+      toggleDebug();
+      break;
+    case 'c':
+      clearDebugVector();
+    default:
+      if(debug){
+        performRayTracing(rayOrigin, rayDestination);
+        std::cout << " The color from the ray is: ";
+        printVector(testColor);
+        std::cout << std::endl;
+        std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
+      }
+      break;
+  }
   
-	std::cout << " The color from the ray is: ";
-  printVector(testColor);
-  std::cout << std::endl;
-	// do here, whatever you want with the keyboard input t.
+  printLine("We are done!");
 
-	//      Trace(0, ray, &color);
-	//      PutPixel(x, y, color);
-
-	std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
 }
 
+
+void clearDebugVector(){
+  rayOrigins.clear();
+  rayIntersections.clear();
+  rayColors.clear();
+}
+
+void toggleDebug(){
+  debug = !debug;
+}
 
 
 // Pseudocode From slides
