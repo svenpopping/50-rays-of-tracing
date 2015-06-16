@@ -49,4 +49,7 @@ Vec3Df speculair(const Vec3Df reflectionN, const Vec3Df viewDirectionN, int tria
 Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint);
 Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector);
 
+// Refraction functions
+Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex);
+
 #endif

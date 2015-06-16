@@ -18,6 +18,7 @@
 Vec3Df testRayOrigin;
 Vec3Df testRayDestination;
 Vec3Df testColor;
+int MAX_LEVEL = 3;
 
 
 //use this function for any preprocessing of the mesh.
@@ -64,7 +65,7 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 
 		Vec3Df N = Vec3Df(0, 0, 0);
 		Vec3Df intersection = rayTriangleIntersect(origin, dir, triangle, depth);
-		if (!isNulVector(intersection)){
+		if (!isNulVector(intersection) && !(intersection == origin)){
 			// save color and depth
 			color = shade(dir, intersection, level, i, getNormal(triangle));
 		}
@@ -86,6 +87,11 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
 	color += diffuse(lightN, normalN, triangleIndex);
 	color += ambient(dir, intersection, level, triangleIndex);
 	color += speculair(reflectionN, viewDirectionN, triangleIndex);
+  
+  unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
+  Material material = MyMesh.materials.at(triMat);
+  
+  color = color * material.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - material.Tr());
 
 	if (color[0] > 1)
 		color[0] = 1;
@@ -93,8 +99,58 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
 		color[1] = 1;
 	if (color[2] > 1)
 		color[2] = 1;
+  
 	return color;
 }
+
+Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
+  
+//  n1 = index of refraction of original medium
+//  n2 = index of refraction of new medium
+//  n = n1 / n2
+//  c2 = sqrt( 1 - n2 * (1 - c12) )
+//  
+//  Rr = (n * V) + (n * c1 - c2) * N
+  
+
+  // If so, trace new ray
+  
+  
+  unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
+  Material material = MyMesh.materials.at(triMat);
+    //First check if there is refraction
+  if(material.Tr() < 1 && level < MAX_LEVEL){
+    // Now calculated the new ray.
+    // Probably wont change the medium, but maybe for future improvement.
+    int n1 = 1; // Index of refraction of current medium
+    int n2 = 1; // Index of refraction of new medium
+    int n = n1/n2;
+    
+    // Calculate dot product from normal vector N (of the surface) and direction vector V(of the incoming ray)
+    Triangle triangle = MyMesh.triangles.at(triangleIndex);
+    Vec3Df N = getNormal(triangle);
+
+    int c = Vec3Df::dotProduct(N, dir);
+    
+    int c2 = sqrt(1 - pow(n, 2) * (1 - pow(c, 2)));
+    
+    Vec3Df refractedRay = (n * dir) + (n * c - c2) * N;
+    
+    Vec3Df color = trace(intersection, refractedRay, level + 1);
+    
+    std::cout << material.Tr() << std::endl;
+    printVector(dir);
+    printVector(intersection);
+    return color;
+    
+  }
+  
+  // Else return nullvector.
+  
+  
+  return nullVector();
+}
+
 
 Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex){
 	Vec3Df color = Vec3Df(0, 0, 0);
@@ -105,8 +161,7 @@ Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex)
 
 	// Od = object color
 	// Ld = lightSource color
-	std::cout << "dotProduct diffuse " << Vec3Df::dotProduct(lightSource, normal) << std::endl;
-	color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
+  color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
 	return color;
 }
 
