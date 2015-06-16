@@ -22,6 +22,7 @@ onlytrace: CXXFLAGS+=-DFIFTYRAYS_ONLYTRACE
 onlytrace: DISPLAY=:1
 onlytrace: all
 	Xvfb $(DISPLAY) $(XVFBFLAGS) & \
+	sleep 2; \
 	DISPLAY=$(DISPLAY) $(BINARY); \
 	kill $$!
 
