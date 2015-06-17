@@ -18,7 +18,7 @@ include mk/$(shell uname -s).mk
 .PHONY: all onlytrace clean
 all: $(BINARY)
 
-onlytrace: CXXFLAGS+=-DFIFTYRAYS_ONLYTRACE
+onlytrace: CPPFLAGS+=-DFIFTYRAYS_ONLYTRACE
 onlytrace: DISPLAY=:1
 onlytrace: all
 	Xvfb $(DISPLAY) $(XVFBFLAGS) & \
