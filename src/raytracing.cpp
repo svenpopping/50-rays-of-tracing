@@ -66,7 +66,7 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 		Vec3Df intersection = rayTriangleIntersect(origin, dir, triangle, depth);
 		if (!isNulVector(intersection)){
 			// save color and depth
-			color = shade(dir, intersection, level, i, getNormal(triangle));
+			color = shade(dir, intersection, level, i);
 		}
 
 
@@ -74,10 +74,11 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 	return color;
 }
 
-Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
+Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(0));
 	Vec3Df lightN = lightDirection / lightDirection.getLength();
+	Vec3Df N = getNormal(MyMesh.triangles.at(triangleIndex));
 	Vec3Df normalN = N / N.getLength();
 	Vec3Df viewDirection = MyCameraPosition - intersection;
 	Vec3Df viewDirectionN = viewDirection / viewDirection.getLength();
@@ -96,7 +97,7 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
 	return color;
 }
 
-Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex){
+Vec3Df diffuse(const Vec3Df lightSource, Vec3Df normal,  int triangleIndex){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 
@@ -105,8 +106,8 @@ Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex)
 
 	// Od = object color
 	// Ld = lightSource color
-	std::cout << "dotProduct diffuse " << Vec3Df::dotProduct(lightSource, normal) << std::endl;
-	color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
+	std::cout << "dotProduct diffuse " << Vec3Df::dotProduct(lightSource, getNormal(MyMesh.triangles.at(triangleIndex))) << std::endl;
+	color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, getNormal(MyMesh.triangles.at(triangleIndex))));
 	return color;
 }
 
@@ -127,8 +128,8 @@ Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int trian
 Vec3Df speculair(const Vec3Df reflection, const Vec3Df viewDirection, int triangleIndex){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-	color = MyMesh.materials.at(triMat).Ks();
-	color = color * pow(std::fmax(Vec3Df::dotProduct(reflection, viewDirection), 0.0), 0.3);
+	//color = MyMesh.materials.at(triMat).Ks();
+	Vec3Df spec = color * pow(std::fmax(Vec3Df::dotProduct(reflection, viewDirection), 0.0), 0.3);
 	return color;
 }
 
