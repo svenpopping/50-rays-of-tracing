@@ -300,7 +300,8 @@ void yourDebugDraw()
 //    this function and raytracing is in place, it might take a 
 //    while to complete...
 
-// 'd' Toggles the debug view
+// 'd' Toggles the debug mode
+// 't' Toggles the debug view
 // 'c' Adds the option to clear the debugvectors
 
 void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3Df & rayDestination)
