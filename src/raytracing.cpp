@@ -94,12 +94,12 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
 	color += ambient(dir, intersection, level, triangleIndex);
 	color += speculair(reflectionN, viewDirectionN, triangleIndex);
 
-	if (color[0] > 1)
-		color[0] = 1;
-	if (color[1] > 1)
-		color[1] = 1;
-	if (color[2] > 1)
-		color[2] = 1;
+	for (int i = 0; i < 3; i++) {
+		if (color[i] > 1)
+			color[i] = 1;
+		if (color[i] < 0)
+			color[i] = 0;
+	}
 	return color;
 }
 
