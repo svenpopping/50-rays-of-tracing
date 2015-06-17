@@ -8,6 +8,8 @@
 #include <GL/glut.h>
 #endif
 
+#include <time.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -261,6 +263,8 @@ void startRaytracing() {
 
   
   for (unsigned int y=0; y<WindowSize_Y;++y)
+  {
+    std::cout << "Tracing row " << y + 1 << "/" << WindowSize_Y << "..." << std::endl;
     for (unsigned int x=0; x<WindowSize_X;++x)
     {
       //produce the rays for each pixel, by interpolating 
@@ -278,6 +282,9 @@ void startRaytracing() {
       //store the result in an image 
       result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
     }
+  }
 
-  result.writeImage("result.ppm");
+  char filename[64];
+  _snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
+  result.writeImage(filename);
 }
