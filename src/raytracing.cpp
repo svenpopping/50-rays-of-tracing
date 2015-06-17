@@ -94,10 +94,8 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
 	Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(0));
 	Vec3Df viewDirection = MyCameraPosition - intersection;
 	Vec3Df reflectionColor;
-    
-  
-    
-    // color = mat.Ka() + reflectionColor;
+
+  // color = mat.Ka() + reflectionColor;
 	color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
 	color += ambient(dir, intersection, level, triangleIndex);
 	color += speculair(reflectionColor.getNormalized(), viewDirection.getNormalized(), triangleIndex);
@@ -115,23 +113,17 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
     }
   }
   
-	if (color[0] > 1)
-		color[0] = 1;
-	if (color[1] > 1)
-		color[1] = 1;
-	if (color[2] > 1)
-		color[2] = 1;
+	for (int i = 0; i < 3; i++) {
+		if (color[i] > 1)
+			color[i] = 1;
+		if (color[i] < 0)
+			color[i] = 0;
+	}
 	return color;
 }
 
-
-
-
 //Ray Sphere::calcRefractingRay(const Ray &r, const Vector &intersection,Vector &normal, double & refl, double &trans)const
 Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
-  
-  {
-    
     unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
     Material material = MyMesh.materials.at(triMat);
     if(material.Tr() < 1 && level < MAX_LEVEL){
@@ -183,11 +175,11 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
     }
     return nullVector();
   }
-}
 
   
-
-  Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex){
+  
+  
+  Vec3Df diffuse(const Vec3Df lightSource, Vec3Df normal,  int triangleIndex){
     Vec3Df color = Vec3Df(0, 0, 0);
     unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
     
@@ -196,42 +188,43 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
     
     // Od = object color
     // Ld = lightSource color
-    color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
     
-    return color;
+    color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
+    return 1 * color;
   }
   
   Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
-    unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-    // ambient = Ka * Ia
-    // where Ka is surface property, Ia is light property
-    
+  unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
     Vec3Df ka = MyMesh.materials.at(triMat).Ka();
-    // the Ka mesh properties of cube.obj and wollahberggeit.obj are 0?
-    
-    //color = MyMesh.materials.at(triMat).Ka();
-    return ka;
-  }
+    // where Ka is surface property, Ia is light property
+	return 1 * ka;
+}
+
+Vec3Df speculair(const Vec3Df reflection, const Vec3Df viewDirection, int triangleIndex){
+	Vec3Df color = Vec3Df(0, 0, 0);
+	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
+	color = MyMesh.materials.at(triMat).Ks();
+	Vec3Df spec = color * pow(std::fmax(Vec3Df::dotProduct(reflection, viewDirection), 0.0), 16);
+	return spec;
+
+}
+
   
-  Vec3Df speculair(const Vec3Df reflection, const Vec3Df viewDirection, int triangleIndex){
-    Vec3Df color = Vec3Df(0, 0, 0);
-    unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-    color = MyMesh.materials.at(triMat).Ks();
-    color = color * pow(std::fmax(Vec3Df::dotProduct(reflection, viewDirection), 0.0), 0.3);
-    return color;
-  }
+
+
   
   Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint){
     Vec3Df lightDir = Vec3Df(0, 0, 0);
     lightDir = lightPoint - point;
     return lightDir;
   }
-  
-  Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector) {
-    Vec3Df reflection = Vec3Df(0, 0, 0);
-    reflection = lightDirection - 2 * (Vec3Df::dotProduct(lightDirection, normalVector) )*normalVector;
-    return reflection;
-  }
+Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector) {
+	Vec3Df reflection = Vec3Df(0, 0, 0);
+	reflection = 2 * (Vec3Df::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
+	return reflection;
+}
+// We can also add textures!
+
 
 Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersection, const Vec3Df normalVector, int level, Material mat) {
   Vec3Df reflection = (2 * Vec3Df::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
