@@ -134,16 +134,6 @@ int main(int argc, char** argv)
     return 0;  // execution never reaches this point
 }
 
-
-
-
-
-
-
-
-
-
-
 /**
  * OpenGL setup - functions do not need to be changed! 
  * you can SKIP AHEAD TO THE KEYBOARD FUNCTION
@@ -198,15 +188,6 @@ void produceRay(int x_I, int y_I, Vec3Df * origin, Vec3Df * dest)
 		dest->p[1]=float(y);
 		dest->p[2]=float(z);
 }
-
-
-
-
-
-
-
-
-
 
 // react to keyboard input
 void keyboard(unsigned char key, int x, int y)
@@ -285,12 +266,12 @@ void startRaytracing() {
   }
 
   char filename[64];
-  
-  #if defined(_MSC_VER)
-    _snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
-  #else    
-    snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
-  #endif
-  
+
+#if defined(_MSC_VER)
+  _snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
+#else    
+  snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
+#endif
+
   result.writeImage(filename);
 }
