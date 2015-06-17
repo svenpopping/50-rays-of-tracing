@@ -245,9 +245,13 @@ void startRaytracing() {
   
   for (unsigned int y=0; y<WindowSize_Y;++y)
   {
-//    std::cout << "Tracing row " << y + 1 << "/" << WindowSize_Y << "..." << std::endl;
-    for (unsigned int x=0; x<WindowSize_X;++x)
-    {
+
+    if (y % (WindowSize_Y / 20) == 0) {
+      float perc = (float)y / (float)WindowSize_Y;
+      std::cout << 100 * perc << "%" << std::endl;
+    }
+
+    for (unsigned int x=0; x<WindowSize_X;++x) {
       //produce the rays for each pixel, by interpolating 
       //the four rays of the frustum corners.
       float xscale=1.0f-float(x)/(WindowSize_X-1);
@@ -268,11 +272,11 @@ void startRaytracing() {
 
   char filename[64];
 
-#if defined(_MSC_VER)
-  _snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
-#else    
-  snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
-#endif
+  #if defined(_MSC_VER)
+    _snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
+  #else    
+    snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
+  #endif
 
   result.writeImage(filename);
 }
