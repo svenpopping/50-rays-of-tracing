@@ -114,11 +114,10 @@ Vec3Df diffuse(const Vec3Df lightSource, Vec3Df normal,  int triangleIndex){
 	// Ld = lightSource color
 	std::cout << "dotProduct diffuse " << Vec3Df::dotProduct(lightSource, normal) << std::endl;
 	color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
-	return color;
+	return 1 * color;
 }
 
 Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){  
-	Vec3Df color = Vec3Df(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 	// ambient = Ka * Ia
 	// where Ka is surface property, Ia is light property
@@ -126,16 +125,15 @@ Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int trian
 	Vec3Df ka = MyMesh.materials.at(triMat).Ka();
 	// the Ka mesh properties of cube.obj and wollahberggeit.obj are 0?
 
-	//color = MyMesh.materials.at(triMat).Ka();
-	return color;
+	return 1 * ka;
 }
 
 Vec3Df speculair(const Vec3Df reflection, const Vec3Df viewDirection, int triangleIndex){
 	Vec3Df color = Vec3Df(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-	//color = MyMesh.materials.at(triMat).Ks();
-	Vec3Df spec = color * pow(std::fmax(Vec3Df::dotProduct(reflection, viewDirection), 0.0), 0.3);
-	return color;
+	color = MyMesh.materials.at(triMat).Ks();
+	Vec3Df spec = color * pow(std::fmax(Vec3Df::dotProduct(reflection, viewDirection), 0.0), 16);
+	return spec;
 }
 
 Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint){
@@ -146,7 +144,7 @@ Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint){
 
 Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector) {
 	Vec3Df reflection = Vec3Df(0, 0, 0);
-	reflection = lightDirection - 2 * (Vec3Df::dotProduct(lightDirection, normalVector) )*normalVector;
+	reflection = 2 * (Vec3Df::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
 	return reflection;
 }
 // We can also add textures!
