@@ -19,12 +19,14 @@ Vec3Df testRayOrigin;
 Vec3Df testRayDestination;
 Vec3Df testColor;
 
+// Add max level
+int maxLevel = 1;
+
 std::vector<Vec3Df> rayOrigins;
 std::vector<Vec3Df> rayIntersections;
 std::vector<Vec3Df> rayColors;
 
 bool debug;
-
 
 //use this function for any preprocessing of the mesh.
 void init()
@@ -79,14 +81,29 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 
 Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
 	Vec3Df color = Vec3Df(0, 0, 0);
+    
+  // TODO: add extra light source code
 
 	Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(0));
 	Vec3Df viewDirection = MyCameraPosition - intersection;
-	Vec3Df reflection = reflectionVector(lightDirection.getNormalized(), N.getNormalized());
+	Vec3Df reflectionColor;
     
-	color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
-	color += ambient(dir, intersection, level, triangleIndex);
-	color += speculair(reflection.getNormalized(), viewDirection.getNormalized(), triangleIndex);
+    Material mat = MyMesh.materials[MyMesh.triangleMaterials[triangleIndex]];
+    if (level < maxLevel && mat.has_Tr()) {
+        if (mat.name().find("002") != std::string::npos) { // Reflection
+            reflectionColor = computeReflectionVector(viewDirection, N.getNormalized(), level, mat);
+            std::cout << reflectionColor;
+        }
+        
+        if (mat.name().find("refract") != std::string::npos) { // Refraction
+            // dingen
+        }
+    }
+    
+    color = mat.Ka() + reflectionColor;
+//	color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
+//	color += ambient(dir, intersection, level, triangleIndex);
+//	color += speculair(reflectionColor.getNormalized(), viewDirection.getNormalized(), triangleIndex);
 
 	if (color[0] > 1)
 		color[0] = 1;
@@ -106,7 +123,10 @@ Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex)
 
 	// Od = object color
 	// Ld = lightSource color
-	color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
+  
+  //	std::cout << "dotProduct diffuse " << Vec3Df::dotProduct(lightSource, normal) << std::endl;
+	
+  color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
 	return color;
 }
 
@@ -137,10 +157,15 @@ Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint){
 	return lightDir;
 }
 
-Vec3Df reflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector) {
+Vec3Df reflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector, int level) {
 	Vec3Df reflection = Vec3Df(0, 0, 0);
 	reflection = viewDirection - 2 * Vec3Df::dotProduct(viewDirection, normalVector) * normalVector;
-	return reflection;
+	return reflection * trace(viewDirection, viewDirection + reflection, level++);
+}
+
+Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector, int level, Material mat) {
+    Vec3Df reflection = viewDirection - 2 * Vec3Df::dotProduct(viewDirection, normalVector) * normalVector;
+    return mat.Ks() * trace(viewDirection, viewDirection + reflection, level++);
 }
 
 // We can also add textures!
