@@ -14,7 +14,7 @@
 #include "mesh.h"
 
 void printVector(Vec3Df vector){
-  std::cout << "Vector: [" << vector.p[0] << "," << vector.p[1] << "," << vector.p[3] << "]" << std::endl;
+    std::cout << "Vector: [" << vector.p[0] << "," << vector.p[1] << "," << vector.p[3] << "]" << std::endl;
 
 }
 
@@ -59,4 +59,13 @@ Vec3Df getNormal(Triangle triangle){
   // no need to normalize
   Vec3Df N = Vec3Df::crossProduct(v0v1, v0v2); // N
   return N;
+}
+
+void printLine(std::string string){
+  print(string);
+  std::cout << std::endl;
+}
+
+void print(std::string string){
+  std::cout << string;
 }

@@ -27,7 +27,6 @@ std::vector<Vec3Df> rayColors;
 bool debug;
 
 
-
 //use this function for any preprocessing of the mesh.
 void init()
 {
@@ -181,7 +180,7 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
       
       float cosI = Vec3Df::dotProduct(dir, normal);
       
-      if(cosI > 0.0)
+      if(cosI > 0.0001)
       {
         n1 = 1.0f;
         n2 = 1.0f;
@@ -225,6 +224,7 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
 }
 
   
+
   Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex){
     Vec3Df color = Vec3Df(0, 0, 0);
     unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
@@ -355,140 +355,148 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
     glBegin(GL_POINTS);
     for (int i = 0; i<MyLightPositions.size(); ++i)
       glVertex3fv(MyLightPositions[i].pointer());
-    glEnd();
-    glPopAttrib();//restore all GL attributes
-    //The Attrib commands maintain the state.
-    //e.g., even though inside the two calls, we set
-    //the color to white, it will be reset to the previous
-    //state after the pop.
-    
-    
-    //as an example: we draw the test ray, which is set by the keyboard function
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glDisable(GL_LIGHTING);
     
     //Show rays
-    for(std::vector<Vec3Df>::size_type i = 0; i != rayColors.size(); i++) {
-      Vec3Df color = rayColors.at(i);
-      Vec3Df origin = rayOrigins.at(i);
-      Vec3Df intersection = rayIntersections.at(i);
-      
-      glBegin(GL_LINES);
-      glColor3f(color[0], color[1], color[2]);
-      glVertex3f(origin[0], origin[1], origin[2]);
-      glColor3f(color[0], color[1], color[2]);
-      glVertex3f(intersection[0], intersection[1], intersection[2]);
-      glEnd();
-      
-      glPointSize(5);
-      glBegin(GL_POINTS);
-      glColor3f(color[0], color[1], color[2]);
-      glVertex3fv(intersection.pointer());
-      glEnd();
-    }
-    
-    
-    // Show light positions
-    glPointSize(10);
-    glBegin(GL_POINTS);
-    glVertex3fv(MyLightPositions[0].pointer());
-    glEnd();
-    glPopAttrib();
-    
-    //draw whatever else you want...
-    ////glutSolidSphere(1,10,10);
-    ////allows you to draw a sphere at the origin.
-    ////using a glTranslate, it can be shifted to whereever you want
-    ////if you produce a sphere renderer, this
-    ////triangulated sphere is nice for the preview
-  }
-  
-  
-  //yourKeyboardFunc is used to deal with keyboard input.
-  //t is the character that was pressed
-  //x,y is the mouse position in pixels
-  //rayOrigin, rayDestination is the ray that is going in the view direction UNDERNEATH your mouse position.
-  //
-  //A few keys are already reserved:
-  //'L' adds a light positioned at the camera location to the MyLightPositions vector
-  //'l' modifies the last added light to the current
-  //    camera position (by default, there is only one light, so move it with l)
-  //    ATTENTION These lights do NOT affect the real-time rendering.
-  //    You should use them for the raytracing.
-  //'r' calls the function performRaytracing on EVERY pixel, using the correct associated ray.
-  //    It then stores the result in an image "result.ppm".
-  //    Initially, this function is fast (performRaytracing simply returns
-  //    the target of the ray - see the code above), but once you replaced
-  //    this function and raytracing is in place, it might take a
-  //    while to complete...
-  
-  // 'd' Adds the option to clear the debugvectors
-  void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3Df & rayDestination)
-  {
-    
-    //here, as an example, I use the ray to fill in the values for my upper global ray variable
-    //I use these variables in the debugDraw function to draw the corresponding ray.
-    //try it: Press a key, move the camera, see the ray that was launched as a line.
-    
-    switch (t) {
-      case 'd':
-        clearDebugVector();
-        break;
+    if(debug){
+      for(std::vector<Vec3Df>::size_type i = 0; i != rayColors.size(); i++) {
+        Vec3Df color = rayColors.at(i);
+        Vec3Df origin = rayOrigins.at(i);
+        Vec3Df intersection = rayIntersections.at(i);
         
-      default:
-        break;
+        glBegin(GL_LINES);
+        glColor3f(color[0], color[1], color[2]);
+        glVertex3f(origin[0], origin[1], origin[2]);
+        glColor3f(color[0], color[1], color[2]);
+        glVertex3f(intersection[0], intersection[1], intersection[2]);
+        glEnd();
+        
+        glPointSize(3);
+        glBegin(GL_POINTS);
+        glVertex3fv(intersection.pointer());
+        glEnd();
+      }
     }
-    
-    debug = true;
-    performRayTracing(rayOrigin, rayDestination);
-    debug = false;
-    
-    
-    std::cout << " The color from the ray is: ";
-    printVector(testColor);
-    std::cout << std::endl;
-    // do here, whatever you want with the keyboard input t.
-    
-    //      Trace(0, ray, &color);
-    //      PutPixel(x, y, color);
-    
-    std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
+	
+  
+  // Show light positions
+	glPointSize(10);
+	glBegin(GL_POINTS);
+	glVertex3fv(MyLightPositions[0].pointer());
+	glEnd();
+	glPopAttrib();
+
+	//draw whatever else you want...
+	////glutSolidSphere(1,10,10);
+	////allows you to draw a sphere at the origin.
+	////using a glTranslate, it can be shifted to whereever you want
+	////if you produce a sphere renderer, this 
+	////triangulated sphere is nice for the preview
+}
+
+
+//yourKeyboardFunc is used to deal with keyboard input.
+//t is the character that was pressed
+//x,y is the mouse position in pixels
+//rayOrigin, rayDestination is the ray that is going in the view direction UNDERNEATH your mouse position.
+//
+//A few keys are already reserved: 
+//'L' adds a light positioned at the camera location to the MyLightPositions vector
+//'l' modifies the last added light to the current 
+//    camera position (by default, there is only one light, so move it with l)
+//    ATTENTION These lights do NOT affect the real-time rendering. 
+//    You should use them for the raytracing.
+//'r' calls the function performRaytracing on EVERY pixel, using the correct associated ray. 
+//    It then stores the result in an image "result.ppm".
+//    Initially, this function is fast (performRaytracing simply returns 
+//    the target of the ray - see the code above), but once you replaced 
+//    this function and raytracing is in place, it might take a 
+//    while to complete...
+
+// 'd' Toggles the debug mode
+// 't' Toggles the debug view
+// 'c' Adds the option to clear the debugvectors
+
+void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3Df & rayDestination){
+
+	//here, as an example, I use the ray to fill in the values for my upper global ray variable
+	//I use these variables in the debugDraw function to draw the corresponding ray.
+	//try it: Press a key, move the camera, see the ray that was launched as a line.
+	
+  switch (t) {
+    case 'd':
+      toggleDebug();
+      break;
+    case 'c':
+      clearDebugVector();
+      break;
+    case 't':
+      toggleFillColor();
+      break;
+    default:
+      if(debug){
+        performRayTracing(rayOrigin, rayDestination);
+        std::cout << " The color from the ray is: ";
+        printVector(testColor);
+        std::cout << std::endl;
+        std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
+      }
+      break;
   }
   
-  void clearDebugVector(){
-    rayOrigins.clear();
-    rayIntersections.clear();
-    rayColors.clear();
+  printLine("We are done!");
+
+}
+
+
+void clearDebugVector(){
+  rayOrigins.clear();
+  rayIntersections.clear();
+  rayColors.clear();
+}
+
+void toggleDebug(){
+  debug = !debug;
+}
+
+void toggleFillColor(){
+  GLint mode[2];
+  glGetIntegerv(GL_POLYGON_MODE, mode);
+  if(mode[0] == GL_FILL){
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   }
-  
-  
-  
-  // Pseudocode From slides
-  
-  //RayTrace (view)
-  //{
-  //  for (y=0; y<view.yres; ++y){
-  //    for(x=0; x<view.xres; ++x){
-  //      ComputeRay(x, y, view, &ray);
-  //      Trace(0, ray, &color);
-  //      PutPixel(x, y, color);
-  //    }
-  //  }
-  //}
-  //
-  //Trace( level, ray, &color){
-  //  if(intersect(level, ray, max, &hit)) {
-  //    Shade(level, hit, &color);
-  //  }
-  //  else
-  //    color=BackgroundColor
-  //}
-  //
-  //Shade(level, hit, &color){
-  //  for each lightsource
-  //    ComputeDirectLight(hit, &directColor);
-  //  if(material reflects && (level < maxLevel))
-  //    computeReflectedRay(hit, &reflectedray);
-  //    Trace(level+1, reflectedRay, &reflectedColor);
-  //  color = directColor + reflection * reflectedcolor + transmission * refractedColor;
-  //}
+  else {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  }
+}
+
+
+// Pseudocode From slides
+
+//RayTrace (view)
+//{
+//  for (y=0; y<view.yres; ++y){
+//    for(x=0; x<view.xres; ++x){
+//      ComputeRay(x, y, view, &ray);
+//      Trace(0, ray, &color);
+//      PutPixel(x, y, color);
+//    }
+//  }
+//}
+//
+//Trace( level, ray, &color){
+//  if(intersect(level, ray, max, &hit)) {
+//    Shade(level, hit, &color);
+//  }
+//  else
+//    color=BackgroundColor
+//}
+//
+//Shade(level, hit, &color){
+//  for each lightsource
+//    ComputeDirectLight(hit, &directColor);
+//  if(material reflects && (level < maxLevel))
+//    computeReflectedRay(hit, &reflectedray);
+//    Trace(level+1, reflectedRay, &reflectedColor);
+//  color = directColor + reflection * reflectedcolor + transmission * refractedColor;
+//}
+

@@ -18,6 +18,7 @@ extern unsigned int WindowSize_Y;//window resolution height
 extern unsigned int RayTracingResolutionX;  // largeur fenetre
 extern unsigned int RayTracingResolutionY;  // largeur fenetre
 
+
 //use this function for any preprocessing of the mesh.
 void init();
 
@@ -40,6 +41,9 @@ void yourDebugDraw();
 //want keyboard interaction? Here it is...
 void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3Df & rayDestination);
 void clearDebugVector();
+void toggleDebug();
+void toggleFillColor();
+
 
 
 // Shading functions
