@@ -285,6 +285,6 @@ void startRaytracing() {
   }
 
   char filename[64];
-  snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
+  _snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
   result.writeImage(filename);
 }
