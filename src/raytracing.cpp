@@ -15,6 +15,7 @@
 //temporary variables
 //these are only used to illustrate
 //a simple debug drawing. A ray
+Vec3Df lightSource;
 Vec3Df testRayOrigin;
 Vec3Df testRayDestination;
 Vec3Df testColor;
@@ -48,6 +49,7 @@ void init()
   //at least ONE light source has to be in the scene!!!
   //here, we set it to the current location of the camera
   MyLightPositions.push_back(MyCameraPosition);
+    
 }
 
 //return the color of your pixel.
@@ -69,8 +71,14 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
       if(debug){
         debugIntersection = intersection;
       }
-      // save color and depth
-      color = shade(dir, intersection, level, i, getNormal(triangle));
+        // save color and depth
+        if (inShadow(intersection)) {
+            color = Vec3Df(1, 1, 1);
+        }
+        else {
+            color = shade(dir, intersection, level, i, getNormal(triangle));
+        }
+      
     }
     
   }
@@ -84,6 +92,21 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
   }
   return color;
 }
+
+bool inShadow(const Vec3Df point) {
+    lightSource = MyLightPositions.at(0);
+    float depth = FLT_MAX;
+    bool Lightview = true;
+    for (int i = 0; i < MyMesh.triangles.size(); i++) {
+        Triangle triangle = MyMesh.triangles.at(i);
+        Vec3Df intersection = rayTriangleIntersect(lightSource, point, triangle, depth);
+        if (!isNulVector(intersection)) {
+            Lightview = false;
+        }
+    }
+    return (!Lightview);
+}
+
 
 Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
 
