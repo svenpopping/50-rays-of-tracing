@@ -10,7 +10,7 @@ config.h
 /raytracing
 /50_rays_of_tracing
 # Result image.
-/result.ppm
+*.ppm
 
 # Object files.
 *.o
