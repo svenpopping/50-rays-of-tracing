@@ -285,6 +285,10 @@ void startRaytracing() {
   }
 
   char filename[64];
+#if defined(_MSC_VER)
   _snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
+#else    
+  snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
+#endif
   result.writeImage(filename);
 }
