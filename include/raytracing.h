@@ -55,6 +55,6 @@ Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint);
 
 // Reflection functions
 Vec3Df reflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector, int level);
-Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector, int level, Material mat);
+Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersection, const Vec3Df normalVector, int level, Material mat);
 
 #endif

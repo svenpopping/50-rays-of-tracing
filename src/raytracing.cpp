@@ -20,7 +20,7 @@ Vec3Df testRayDestination;
 Vec3Df testColor;
 
 // Add max level
-int maxLevel = 1;
+int maxLevel = 3;
 
 std::vector<Vec3Df> rayOrigins;
 std::vector<Vec3Df> rayIntersections;
@@ -63,15 +63,19 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 		Triangle triangle = MyMesh.triangles.at(i);
 
 		Vec3Df intersection = rayTriangleIntersect(origin, dir, triangle, depth);
-		if (!isNulVector(intersection)){
+		if (!isNulVector(intersection) && !(origin == intersection)){
       if(debug){
         debugIntersection = intersection;
       }
 			// save color and depth
 			color = shade(dir, intersection, level, i, getNormal(triangle));
+      // std::cout << "Updating color to " << color << std::endl;
 		}
 	}
   if(debug){
+    // std::cout << "Pushing ray..." << std::endl;
+    // std::cout << "Ray color: " << color << std::endl;
+
     rayOrigins.push_back(origin);
     rayIntersections.push_back(debugIntersection);
     rayColors.push_back(color);
@@ -90,9 +94,10 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
     
     Material mat = MyMesh.materials[MyMesh.triangleMaterials[triangleIndex]];
     if (level < maxLevel && mat.has_Tr()) {
+        level++;
         if (mat.name().find("002") != std::string::npos) { // Reflection
-            reflectionColor = computeReflectionVector(viewDirection, N.getNormalized(), level, mat);
-            std::cout << reflectionColor;
+            // std::cout << "Reflecting..." << std::endl;
+            reflectionColor = computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat);
         }
         
         if (mat.name().find("refract") != std::string::npos) { // Refraction
@@ -100,10 +105,10 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
         }
     }
     
-    color = mat.Ka() + reflectionColor;
-//	color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
-//	color += ambient(dir, intersection, level, triangleIndex);
-//	color += speculair(reflectionColor.getNormalized(), viewDirection.getNormalized(), triangleIndex);
+    // color = mat.Ka() + reflectionColor;
+	color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
+	color += ambient(dir, intersection, level, triangleIndex);
+	color += speculair(reflectionColor.getNormalized(), viewDirection.getNormalized(), triangleIndex);
 
 	if (color[0] > 1)
 		color[0] = 1;
@@ -124,7 +129,7 @@ Vec3Df diffuse(const Vec3Df lightSource, const Vec3Df normal, int triangleIndex)
 	// Od = object color
 	// Ld = lightSource color
   
-  //	std::cout << "dotProduct diffuse " << Vec3Df::dotProduct(lightSource, normal) << std::endl;
+  	// std::cout << "dotProduct diffuse " << Vec3Df::dotProduct(lightSource, normal) << std::endl;
 	
   color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
 	return color;
@@ -163,9 +168,11 @@ Vec3Df reflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector, i
 	return reflection * trace(viewDirection, viewDirection + reflection, level++);
 }
 
-Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector, int level, Material mat) {
-    Vec3Df reflection = viewDirection - 2 * Vec3Df::dotProduct(viewDirection, normalVector) * normalVector;
-    return mat.Ks() * trace(viewDirection, viewDirection + reflection, level++);
+Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersection, const Vec3Df normalVector, int level, Material mat) {
+    Vec3Df reflection = (2 * Vec3Df::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
+    // Vec3Df reflection = 2 * (Vec3Df::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
+    
+    return trace(intersection, reflection.getNormalized(), level);
 }
 
 // We can also add textures!
@@ -186,7 +193,7 @@ Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Triangl
 
 	// check if ray and plane are parallel ?
 	float NdotRayDirection = Vec3Df::dotProduct(N, dir);
-	if (fabs(NdotRayDirection) < 0.000000001) // almost 0
+	if (fabs(NdotRayDirection) < 0.0001) // almost 0
 		return nullVector(); // they are parallel so they don't intersect !
 
 	// compute d parameter using equation 2 (d is the distance from the origin (0, 0, 0) to the plane)
@@ -345,10 +352,10 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
     default:
       if(debug){
         performRayTracing(rayOrigin, rayDestination);
-        std::cout << " The color from the ray is: ";
+        // std::cout << " The color from the ray is: ";
         printVector(testColor);
-        std::cout << std::endl;
-        std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
+        // std::cout << std::endl;
+        // std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
       }
       break;
   }
