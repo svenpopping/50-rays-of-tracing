@@ -11,6 +11,7 @@ config.h
 /50_rays_of_tracing
 # Result image.
 *.ppm
+*.bmp
 
 # Object files.
 *.o

@@ -283,8 +283,9 @@ void startRaytracing() {
       result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
     }
   }
-  char filename[64];
   
+  char filename[64];
+
   #if defined(_MSC_VER)
     _snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
   #else    

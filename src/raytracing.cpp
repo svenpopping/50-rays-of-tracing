@@ -20,12 +20,14 @@ Vec3Df testRayDestination;
 Vec3Df testColor;
 int MAX_LEVEL = 3;
 
+// Add max level
+int maxLevel = 3;
+
 std::vector<Vec3Df> rayOrigins;
 std::vector<Vec3Df> rayIntersections;
 std::vector<Vec3Df> rayColors;
 
 bool debug;
-
 
 //use this function for any preprocessing of the mesh.
 void init()
@@ -73,6 +75,9 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
     
   }
   if(debug){
+    // std::cout << "Pushing ray..." << std::endl;
+    // std::cout << "Ray color: " << color << std::endl;
+
     rayOrigins.push_back(origin);
     rayIntersections.push_back(debugIntersection);
     rayColors.push_back(color);
@@ -81,86 +86,44 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 }
 
 Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
-  Vec3Df color = Vec3Df(0, 0, 0);
+
+	Vec3Df color = Vec3Df(0, 0, 0);
+    
+  // TODO: add extra light source code
+
+	Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(0));
+	Vec3Df viewDirection = MyCameraPosition - intersection;
+	Vec3Df reflectionColor;
+    
   
-  Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(0));
-  Vec3Df lightN = lightDirection / lightDirection.getLength();
-  Vec3Df normalN = N / N.getLength();
-  Vec3Df viewDirection = MyCameraPosition - intersection;
-  Vec3Df viewDirectionN = viewDirection / viewDirection.getLength();
-  Vec3Df reflection = reflectionVector(lightN, normalN);
-  Vec3Df reflectionN = reflection / reflection.getLength();
-  
-  color += diffuse(lightN, normalN, triangleIndex);
-  color += ambient(dir, intersection, level, triangleIndex);
-  color += speculair(reflectionN, viewDirectionN, triangleIndex);
-  
+    
+    // color = mat.Ka() + reflectionColor;
+	color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
+	color += ambient(dir, intersection, level, triangleIndex);
+	color += speculair(reflectionColor.getNormalized(), viewDirection.getNormalized(), triangleIndex);
+
   unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-  Material material = MyMesh.materials.at(triMat);
+  Material mat = MyMesh.materials.at(triMat);
   
-  color = color * material.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - material.Tr());
+  if (level < maxLevel) {
+    level++;
+    if (mat.name().find("002") != std::string::npos) { // Reflection
+      //std::cout << "Reflecting..." << std::endl;
+      color = computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat);
+    } else {
+      color = color * mat.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - mat.Tr());
+    }
+  }
   
-  if (color[0] > 1)
-    color[0] = 1;
-  if (color[1] > 1)
-    color[1] = 1;
-  if (color[2] > 1)
-    color[2] = 1;
-  
-  return color;
+	if (color[0] > 1)
+		color[0] = 1;
+	if (color[1] > 1)
+		color[1] = 1;
+	if (color[2] > 1)
+		color[2] = 1;
+	return color;
 }
 
-//Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
-//
-////  n1 = index of refraction of original medium
-////  n2 = index of refraction of new medium
-////  n = n1 / n2
-////  c2 = sqrt( 1 - n2 * (1 - c12) )
-////
-////  Rr = (n * V) + (n * c1 - c2) * N
-//
-//
-//  // If so, trace new ray
-//
-//
-//  unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-//  Material material = MyMesh.materials.at(triMat);
-//    //First check if there is refraction
-//  if(material.Tr() < 1 && level < MAX_LEVEL){
-//    // Now calculated the new ray.
-//    // Probably wont change the medium, but maybe for future improvement.
-//    int n1 = 1; // Index of refraction of current medium
-//    int n2 = 1; // Index of refraction of new medium
-//
-//    // Calculate dot product from normal vector N (of the surface) and direction vector V(of the incoming ray)
-//    Triangle triangle = MyMesh.triangles.at(triangleIndex);
-//    Vec3Df N = getNormal(triangle);
-//
-//    int c = Vec3Df::dotProduct(dir, N);
-//
-//    int minplus = 1;
-//
-//    if(c > 0){
-//      minplus = -1;
-//    }
-//
-//    int c2 = sqrt(1 - ((pow(n1, 2) * (1 - pow(c, 2))))/pow(n2, 2));
-//
-//    Vec3Df refractedRay = n1/n2 * (dir - c * N) - N * c2 * minplus;
-//
-//    Vec3Df color = trace(intersection, refractedRay, level + 1);
-//
-//    printVector(dir);
-//    printVector(intersection);
-//    return color;
-//
-//  }
-//
-//  // Else return nullvector.
-//
-//
-//  return nullVector();
-//}
 
 
 
@@ -175,7 +138,6 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
       
       float n1, n2, n;
       Triangle triangle = MyMesh.triangles.at(triangleIndex);
-      Vec3Df N = getNormal(triangle);
       Vec3Df normal = getNormal(triangle);
       
       float cosI = Vec3Df::dotProduct(dir, normal);
@@ -215,7 +177,7 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
       //  }
       Vec3Df refractedRay = n * dir + (n * cosI - cosT)*normal;
       
-      Vec3Df color = trace(intersection, refractedRay, level + 1);
+      Vec3Df color = trace(intersection, refractedRay, level);
       
       return color;
     }
@@ -270,6 +232,13 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
     reflection = lightDirection - 2 * (Vec3Df::dotProduct(lightDirection, normalVector) )*normalVector;
     return reflection;
   }
+
+Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersection, const Vec3Df normalVector, int level, Material mat) {
+  Vec3Df reflection = (2 * Vec3Df::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
+  // Vec3Df reflection = 2 * (Vec3Df::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
+  
+  return trace(intersection, reflection.getNormalized(), level);
+}
   // We can also add textures!
   
   // The source of this function is:
@@ -435,10 +404,10 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
     default:
       if(debug){
         performRayTracing(rayOrigin, rayDestination);
-        std::cout << " The color from the ray is: ";
+        // std::cout << " The color from the ray is: ";
         printVector(testColor);
-        std::cout << std::endl;
-        std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
+        // std::cout << std::endl;
+        // std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
       }
       break;
   }

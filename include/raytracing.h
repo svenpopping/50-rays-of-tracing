@@ -52,7 +52,11 @@ Vec3Df diffuse(const Vec3Df light, const Vec3Df N, int triangleIndex);
 Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex);
 Vec3Df speculair(const Vec3Df reflectionN, const Vec3Df viewDirectionN, int triangleIndex);
 Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint);
-Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector);
+
+
+// Reflection functions
+Vec3Df reflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector, int level);
+Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersection, const Vec3Df normalVector, int level, Material mat);
 
 // Refraction functions
 Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex);
