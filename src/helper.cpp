@@ -14,7 +14,7 @@
 #include "mesh.h"
 
 void printVector(Vec3Df vector){
-  std::cout << "Vector: [" << vector.p[0] << "," << vector.p[1] << "," << vector.p[3] << "]" << std::endl;
+    std::cout << "Vector: [" << vector.p[0] << "," << vector.p[1] << "," << vector.p[3] << "]" << std::endl;
 
 }
 
@@ -24,6 +24,20 @@ void printVertex(Vertex vertex){
   std::cout << ", ";
   printVector(vertex.n);
   std::cout << "]" << std::endl;
+}
+
+// Clamp color between .. and 1
+Vec3Df clamp(Vec3Df vertex) {
+    if(vertex[0] > 1)
+        vertex[0] = 1;
+    
+    if(vertex[1] > 1)
+        vertex[1] = 1;
+    
+    if(vertex[2] > 1)
+        vertex[2] = 1;
+    
+    return vertex;
 }
 
 Vec3Df nullVector(){
@@ -45,5 +59,13 @@ Vec3Df getNormal(Triangle triangle){
   // no need to normalize
   Vec3Df N = Vec3Df::crossProduct(v0v1, v0v2); // N
   return N;
-  
+}
+
+void printLine(std::string string){
+  print(string);
+  std::cout << std::endl;
+}
+
+void print(std::string string){
+  std::cout << string;
 }

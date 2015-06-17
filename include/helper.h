@@ -20,6 +20,11 @@ extern Mesh MyMesh; //Main mesh
 void printVector(Vec3Df vector);
 void printVertex(Vertex vertex);
 
+void printLine(std::string string);
+void print(std::string string);
+
+Vec3Df clamp(Vec3Df vector);
+
 Vec3Df nullVector();
 bool isNulVector(Vec3Df vector);
 
