@@ -282,12 +282,14 @@ void startRaytracing() {
       //store the result in an image 
       result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
     }
-
   }
   char filename[64];
-
-  snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
   
-    result.writeImage(filename);
-
+  #if defined(_MSC_VER)
+    _snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
+  #else    
+    snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
+  #endif
+  
+  result.writeImage(filename);
 }
