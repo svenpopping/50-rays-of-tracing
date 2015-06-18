@@ -1,5 +1,3 @@
-#ifndef RAYTRACING_Hjdslkjfadjfasljf
-#define RAYTRACING_Hjdslkjfadjfasljf
 #include <vector>
 #include "mesh.h"
 #include "config.h"
@@ -45,7 +43,8 @@ void toggleDebug();
 void toggleFillColor();
 
 //Shadow Functions
-bool inShadow(const Vec3Df point, int index);
+float ShadowPercentage(const Vec3Df point, int j);
+bool inShadow(const Vec3Df point, int index, const Vec3Df source);
 
 // Shading functions
 Vec3Df shade(const Vec3Df origin, const Vec3Df intersection, int level, int triangleIndex, Vec3Df normal);
@@ -61,5 +60,3 @@ Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersec
 
 // Refraction functions
 Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex);
-
-#endif

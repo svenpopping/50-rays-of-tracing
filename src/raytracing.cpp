@@ -15,7 +15,7 @@
 //temporary variables
 //these are only used to illustrate
 //a simple debug drawing. A ray
-Vec3Df lightSource;
+
 Vec3Df testRayOrigin;
 Vec3Df testRayDestination;
 Vec3Df testColor;
@@ -72,12 +72,9 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
                 debugIntersection = intersection;
             }
             // save color and depth
-            if (inShadow(intersection, i)) {
-                color = Vec3Df(0, 0, 0);
-            }
-            else {
-                color = shade(dir, intersection, level, i, getNormal(triangle));
-            }
+            float ShadowScalar = 1.f - ShadowPercentage(intersection, i);
+            color = shade(dir, intersection, level, i, getNormal(triangle));
+            color = color*ShadowScalar;
         }
     }
     if(debug){
@@ -91,18 +88,30 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
     return color;
 }
 
-bool inShadow(const Vec3Df point, int j) {
-    lightSource = MyLightPositions.at(0);
+float ShadowPercentage(const Vec3Df point, int j) {
+    int Lightpoints = MyLightPositions.size();
+    float shadows = 0.0;
+    for (int i = 0; i < Lightpoints; i++) {
+        if (inShadow(point, j, MyLightPositions.at(i))) {
+            shadows++;
+        }
+    }
+    //std::cout << Lightpoints;
+    shadows = shadows/Lightpoints;
+    return shadows;
+}
+
+bool inShadow(const Vec3Df point, int j, const Vec3Df lightSource) {
     float depth = FLT_MAX;
-    bool Lightview = false;
+    bool interrupt  = false;
     for (int i = 0; i < MyMesh.triangles.size(); i++) {
         Triangle triangle = MyMesh.triangles.at(i);
         Vec3Df intersection = rayTriangleIntersect(point, lightSource, triangle, depth);
         if (!isNulVector(intersection) && i != j) {
-            Lightview = true;
+            interrupt = true;
         }
     }
-    return Lightview;
+    return interrupt;
 }
 
 
@@ -246,7 +255,7 @@ Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector) 
 
 
 Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersection, const Vec3Df normalVector, int level, Material mat) {
-//    Vec3Df reflection = (2 * Vec3Df::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
+    //    Vec3Df reflection = (2 * Vec3Df::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
     Vec3Df reflection = viewDirection - 2 * Vec3Df::dotProduct(normalVector, viewDirection) * normalVector;
     // Vec3Df reflection = 2 * (Vec3Df::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
     
