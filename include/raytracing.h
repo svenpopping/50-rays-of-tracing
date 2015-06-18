@@ -9,8 +9,8 @@
 //In principle, you can do the entire project ONLY by working in these two files
 
 extern Mesh MyMesh; //Main mesh
-extern std::vector<Vec3Df> MyLightPositions;
-extern Vec3Df MyCameraPosition; //currCamera
+extern std::vector<Vec3Dd> MyLightPositions;
+extern Vec3Dd MyCameraPosition; //currCamera
 extern unsigned int WindowSize_X;//window resolution width
 extern unsigned int WindowSize_Y;//window resolution height
 extern unsigned int RayTracingResolutionX;  // largeur fenetre
@@ -23,40 +23,40 @@ void init();
 //you can use this function to transform a click to an origin and destination
 //the last two values will be changed. There is no need to define this function.
 //it is defined elsewhere
-void produceRay(int x_I, int y_I, Vec3Df & origin, Vec3Df & dest);
+void produceRay(int x_I, int y_I, Vec3Dd & origin, Vec3Dd & dest);
 
 
-Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Triangle triangle, float &depth);
+Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangle triangle, double &depth);
 
 
 //your main function to rewrite
-Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest);
-Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level);
+Vec3Dd performRayTracing(const Vec3Dd & origin, const Vec3Dd & dest);
+Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level);
 
 //a function to debug --- you can draw in OpenGL here
 void yourDebugDraw();
 
 //want keyboard interaction? Here it is...
-void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3Df & rayDestination);
+void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination);
 void clearDebugVector();
 void toggleDebug();
 void toggleFillColor();
 
 //Shadow Functions
-float ShadowPercentage(const Vec3Df point, int j);
-bool inShadow(const Vec3Df point, int index, const Vec3Df source);
+double ShadowPercentage(const Vec3Dd point, int j);
+bool inShadow(const Vec3Dd point, int index, const Vec3Dd source);
 
 // Shading functions
-Vec3Df shade(const Vec3Df origin, const Vec3Df intersection, int level, int triangleIndex, Vec3Df normal);
-Vec3Df diffuse(const Vec3Df light, Vec3Df normal,  int triangleIndex);
-Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex);
-Vec3Df speculair(const Vec3Df lightDirection, const Vec3Df viewDirectionN, int triangleIndex);
-Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint);
+Vec3Dd shade(const Vec3Dd origin, const Vec3Dd intersection, int level, int triangleIndex, Vec3Dd normal);
+Vec3Dd diffuse(const Vec3Dd light, Vec3Dd normal,  int triangleIndex);
+Vec3Dd ambient(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex);
+Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirectionN, int triangleIndex);
+Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint);
 
 
 // Reflection functions
-Vec3Df reflectionVector(const Vec3Df viewDirection, const Vec3Df normalVector);
-Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersection, const Vec3Df normalVector, int level, Material mat);
+Vec3Dd reflectionVector(const Vec3Dd viewDirection, const Vec3Dd normalVector);
+Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersection, const Vec3Dd normalVector, int level, Material mat);
 
 // Refraction functions
-Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex);
+Vec3Dd computeRefraction(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex);

@@ -38,13 +38,13 @@ const unsigned int LINE_LEN=256;
  ************************************************************/
 void Mesh::computeVertexNormals () {
     for (unsigned int i = 0; i < vertices.size (); i++)
-        vertices[i].n = Vec3Df (0.0, 0.0, 0.0);
+        vertices[i].n = Vec3Dd (0.0, 0.0, 0.0);
 
     //Sum up neighboring normals
     for (unsigned int i = 0; i < triangles.size (); i++) {
-        Vec3Df edge01 = vertices[triangles[i].v[1]].p -  vertices[triangles[i].v[0]].p;
-        Vec3Df edge02 = vertices[triangles[i].v[2]].p -  vertices[triangles[i].v[0]].p;
-        Vec3Df n = Vec3Df::crossProduct (edge01, edge02);
+        Vec3Dd edge01 = vertices[triangles[i].v[1]].p -  vertices[triangles[i].v[0]].p;
+        Vec3Dd edge02 = vertices[triangles[i].v[2]].p -  vertices[triangles[i].v[0]].p;
+        Vec3Dd n = Vec3Dd::crossProduct (edge01, edge02);
         n.normalize ();
         for (unsigned int j = 0; j < 3; j++)
             vertices[triangles[i].v[j]].n += n;
@@ -65,12 +65,12 @@ void Mesh::drawSmooth(){
 
     for (unsigned int i=0;i<triangles.size();++i)
     {
-		Vec3Df col=this->materials[triangleMaterials[i]].Kd();
+		Vec3Dd col=this->materials[triangleMaterials[i]].Kd();
 
-		glColor3fv(col.pointer());
+		glColor3dv(col.pointer());
         for(int v = 0; v < 3 ; v++){
-            glNormal3f(vertices[triangles[i].v[v]].n[0], vertices[triangles[i].v[v]].n[1], vertices[triangles[i].v[v]].n[2]);
-            glVertex3f(vertices[triangles[i].v[v]].p[0], vertices[triangles[i].v[v]].p[1] , vertices[triangles[i].v[v]].p[2]);
+            glNormal3d(vertices[triangles[i].v[v]].n[0], vertices[triangles[i].v[v]].n[1], vertices[triangles[i].v[v]].n[2]);
+            glVertex3d(vertices[triangles[i].v[v]].p[0], vertices[triangles[i].v[v]].p[1] , vertices[triangles[i].v[v]].p[2]);
         }
 
     }
@@ -83,15 +83,15 @@ void Mesh::draw(){
     for (unsigned int i=0;i<triangles.size();++i)
     {
         unsigned int triMat = triangleMaterials.at(i);
-        Vec3Df col=this->materials.at(triMat).Kd();
-		glColor3fv(col.pointer());
-        Vec3Df edge01 = vertices[triangles[i].v[1]].p -  vertices[triangles[i].v[0]].p;
-        Vec3Df edge02 = vertices[triangles[i].v[2]].p -  vertices[triangles[i].v[0]].p;
-        Vec3Df n = Vec3Df::crossProduct (edge01, edge02);
+        Vec3Dd col=this->materials.at(triMat).Kd();
+		glColor3dv(col.pointer());
+        Vec3Dd edge01 = vertices[triangles[i].v[1]].p -  vertices[triangles[i].v[0]].p;
+        Vec3Dd edge02 = vertices[triangles[i].v[2]].p -  vertices[triangles[i].v[0]].p;
+        Vec3Dd n = Vec3Dd::crossProduct (edge01, edge02);
         n.normalize ();
-        glNormal3f(n[0], n[1], n[2]);
+        glNormal3d(n[0], n[1], n[2]);
         for(int v = 0; v < 3 ; v++){
-            glVertex3f(vertices[triangles[i].v[v]].p[0], vertices[triangles[i].v[v]].p[1] , vertices[triangles[i].v[v]].p[2]);
+            glVertex3d(vertices[triangles[i].v[v]].p[0], vertices[triangles[i].v[v]].p[1] , vertices[triangles[i].v[v]].p[2]);
         }
 
     }
@@ -127,7 +127,7 @@ bool Mesh::loadMesh(const char * filename, bool randomizeTriangulation)
     
     map<string, unsigned int> materialIndex;
     char                   s[LINE_LEN];
-    float                  x, y, z;
+    double                  x, y, z;
 
     //we replace the \ by /
     std::string realFilename(filename);
@@ -137,7 +137,7 @@ bool Mesh::loadMesh(const char * filename, bool randomizeTriangulation)
             realFilename[i]='/';
     }
 
-    std::vector<Vec3Df>     normals;
+    std::vector<Vec3Dd>     normals;
     std::string            matname;
 
     std::string path_;
@@ -201,8 +201,8 @@ bool Mesh::loadMesh(const char * filename, bool randomizeTriangulation)
         // vertex
         else if (strncmp(s, "v ", 2) == 0)
         {
-            sscanf(s, "v %f %f %f", &x, &y, &z);
-            vertices.push_back(Vec3Df(x,y,z));
+            sscanf(s, "v %lf %lf %lf", &x, &y, &z);
+            vertices.push_back(Vec3Dd(x,y,z));
         }
 
 
@@ -210,10 +210,10 @@ bool Mesh::loadMesh(const char * filename, bool randomizeTriangulation)
         else if (strncmp(s, "vt ", 3) == 0)
         {
             //we do nothing
-			Vec3Df texCoords(0,0,0);
+			Vec3Dd texCoords(0,0,0);
 		
 			//we only support 2d tex coords
-            sscanf(s, "vt %f %f", &texCoords[0], &texCoords[1]);
+            sscanf(s, "vt %lf %lf", &texCoords[0], &texCoords[1]);
             texcoords.push_back(texCoords);
         }
         // normal
@@ -355,7 +355,7 @@ bool Mesh::loadMtl(const char * filename, std::map<string, unsigned int> & mater
 
     std::string key;
     Material    mat;
-    float       f1,f2,f3;
+    double       f1,f2,f3;
     bool        indef = false;
 
     memset(line,0,LINE_LEN);
@@ -394,27 +394,27 @@ bool Mesh::loadMtl(const char * filename, std::map<string, unsigned int> & mater
         }
         else if (strncmp(line, "Kd ", 3)==0) // diffuse color
         {
-            sscanf(line, "Kd %f %f %f", &f1, &f2, &f3);
+            sscanf(line, "Kd %lf %lf %lf", &f1, &f2, &f3);
             mat.set_Kd(f1,f2,f3);
         }
         else if (strncmp(line, "Ka ", 3)==0) // ambient color
         {
-            sscanf(line, "Ka %f %f %f", &f1, &f2, &f3);
+            sscanf(line, "Ka %lf %lf %lf", &f1, &f2, &f3);
             mat.set_Ka(f1,f2,f3);
         }
         else if (strncmp(line, "Ks ", 3)==0) // specular color
         {
-            sscanf(line, "Ks %f %f %f", &f1, &f2, &f3);
+            sscanf(line, "Ks %lf %lf %lf", &f1, &f2, &f3);
             mat.set_Ks(f1,f2,f3);
         }
         else if (strncmp(line, "Ns ", 3)==0) // Shininess [0..200]
         {
-            sscanf(line, "Ns %f", &f1);
+            sscanf(line, "Ns %lf", &f1);
             mat.set_Ns(f1);
         }
         else if (strncmp(line, "Ni ", 3)==0) // Shininess [0..200]
         {
-            sscanf(line, "Ni %f", &f1);
+            sscanf(line, "Ni %lf", &f1);
             mat.set_Ni(f1);
         }
         else if (strncmp(line, "illum ", 6)==0) // diffuse/specular shading model
@@ -442,12 +442,12 @@ bool Mesh::loadMtl(const char * filename, std::map<string, unsigned int> & mater
         }
         else if (strncmp(line, "Tr ", 3)==0 ) // transparency value
         {
-            sscanf(line, "Tr %f", &f1);
+            sscanf(line, "Tr %lf", &f1);
             mat.set_Tr(f1);
         }
         else if (strncmp(line, "d ", 2)==0 ) // transparency value
         {
-            sscanf(line, "d %f", &f1);
+            sscanf(line, "d %lf", &f1);
             mat.set_Tr(f1);
         }
 

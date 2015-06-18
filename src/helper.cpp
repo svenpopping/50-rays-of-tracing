@@ -20,7 +20,7 @@
 #include "helper.h"
 #include "mesh.h"
 
-void printVector(Vec3Df vector){
+void printVector(Vec3Dd vector){
     std::cout << "Vector: [" << vector.p[0] << "," << vector.p[1] << "," << vector.p[3] << "]" << std::endl;
 
 }
@@ -34,7 +34,7 @@ void printVertex(Vertex vertex){
 }
 
 // Clamp color between .. and 1
-Vec3Df clamp(Vec3Df color) {
+Vec3Dd clamp(Vec3Dd color) {
   for (int i = 0; i < 3; i++) {
     if (color[i] > 1)
       color[i] = 1;
@@ -45,24 +45,24 @@ Vec3Df clamp(Vec3Df color) {
     return color;
 }
 
-Vec3Df nullVector(){
-  return Vec3Df(0, 0, 0);
+Vec3Dd nullVector(){
+  return Vec3Dd(0, 0, 0);
 }
 
-bool isNulVector(Vec3Df vector){
-  Vec3Df nullVector = Vec3Df(0, 0, 0);
+bool isNulVector(Vec3Dd vector){
+  Vec3Dd nullVector = Vec3Dd(0, 0, 0);
   return vector == nullVector;
 }
 
 
-Vec3Df getNormal(Triangle triangle){
-  Vec3Df v0 = MyMesh.vertices.at(triangle.v[0]).p;
-  Vec3Df v1 = MyMesh.vertices.at(triangle.v[1]).p;
-  Vec3Df v2 = MyMesh.vertices.at(triangle.v[2]).p;
-  Vec3Df v0v1 = v1 - v0;
-  Vec3Df v0v2 = v2 - v0;
+Vec3Dd getNormal(Triangle triangle){
+  Vec3Dd v0 = MyMesh.vertices.at(triangle.v[0]).p;
+  Vec3Dd v1 = MyMesh.vertices.at(triangle.v[1]).p;
+  Vec3Dd v2 = MyMesh.vertices.at(triangle.v[2]).p;
+  Vec3Dd v0v1 = v1 - v0;
+  Vec3Dd v0v2 = v2 - v0;
   // no need to normalize
-  Vec3Df N = Vec3Df::crossProduct(v0v1, v0v2); // N
+  Vec3Dd N = Vec3Dd::crossProduct(v0v1, v0v2); // N
   return N;
 }
 

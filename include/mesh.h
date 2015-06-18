@@ -69,25 +69,25 @@ class Material
         bool has_illum(void) { return illum_is_set_; }
         bool has_Tr(void) { return Tr_is_set_; }
 
-        void set_Kd( float r, float g, float b ) 
-        { Kd_=Vec3Df(r,g,b); Kd_is_set_=true; }
+        void set_Kd( double r, double g, double b ) 
+        { Kd_=Vec3Dd(r,g,b); Kd_is_set_=true; }
 
-        void set_Ka( float r, float g, float b ) 
-        { Ka_=Vec3Df(r,g,b); Ka_is_set_=true; }
+        void set_Ka( double r, double g, double b ) 
+        { Ka_=Vec3Dd(r,g,b); Ka_is_set_=true; }
 
-        void set_Ks( float r, float g, float b ) 
-        { Ks_=Vec3Df(r,g,b); Ks_is_set_=true; }
+        void set_Ks( double r, double g, double b ) 
+        { Ks_=Vec3Dd(r,g,b); Ks_is_set_=true; }
 
-        void set_Ns( float r) 
+        void set_Ns( double r) 
         { Ns_=r;    Ns_is_set_=true; }
 
-        void set_Ni( float r) 
+        void set_Ni( double r) 
         { Ni_=r;    Ni_is_set_=true; }
 
         void set_illum( int r) 
         { illum_=r;    illum_is_set_=true; }
 
-        void set_Tr( float t )
+        void set_Tr( double t )
         { Tr_=t;            Tr_is_set_=true; }
 
         void set_textureName(const std::string & s)//name of the texture image file
@@ -100,13 +100,13 @@ class Material
 			name_=s;
 		}
 
-        const Vec3Df& Kd( void ) const { return Kd_; } //diffuse
-        const Vec3Df& Ka( void ) const { return Ka_; } //ambiant
-        const Vec3Df& Ks( void ) const { return Ks_; } //specular
-        float  Ni( void ) const { return Ni_; } 
-        float  Ns( void ) const { return Ns_; } //shininess
+        const Vec3Dd& Kd( void ) const { return Kd_; } //diffuse
+        const Vec3Dd& Ka( void ) const { return Ka_; } //ambiant
+        const Vec3Dd& Ks( void ) const { return Ks_; } //specular
+        double  Ni( void ) const { return Ni_; } 
+        double  Ns( void ) const { return Ns_; } //shininess
         int       illum(void)const { return illum_;}
-        float  Tr( void ) const { return Tr_; }//can be hijacked, e.g., for transparency
+        double  Tr( void ) const { return Tr_; }//can be hijacked, e.g., for transparency
         const std::string & textureName()//name of the texture image file
         {
             return textureName_;
@@ -119,13 +119,13 @@ class Material
         
     private:
 
-        Vec3Df Kd_;         bool Kd_is_set_; // diffuse
-        Vec3Df Ka_;         bool Ka_is_set_; // ambient
-        Vec3Df Ks_;         bool Ks_is_set_; // specular
-        float Ns_;                     bool Ns_is_set_; 
-        float Ni_;                     bool Ni_is_set_; 
+        Vec3Dd Kd_;         bool Kd_is_set_; // diffuse
+        Vec3Dd Ka_;         bool Ka_is_set_; // ambient
+        Vec3Dd Ks_;         bool Ks_is_set_; // specular
+        double Ns_;                     bool Ns_is_set_; 
+        double Ni_;                     bool Ni_is_set_; 
         int illum_;                     bool illum_is_set_;//illumination model
-        float Tr_;         bool Tr_is_set_; // transperency
+        double Tr_;         bool Tr_is_set_; // transperency
         std::string        name_;
         std::string        textureName_;
     };
@@ -193,8 +193,8 @@ public:
 	std::vector<Vertex> vertices;
 	//texCoords are the texture coordinates, these are DIFFERENT indices in triangles.
 	//in the current version, if you use textures, then you have to use texture coords everywhere
-	//for convenience, Vec3Df is used, although only 2D tex coordinates are stored (x,y entry of the Vec3Df).
-	std::vector<Vec3Df> texcoords;
+	//for convenience, Vec3Dd is used, although only 2D tex coordinates are stored (x,y entry of the Vec3Dd).
+	std::vector<Vec3Dd> texcoords;
 	//Triangles are the indices of the vertices involved in a triangle.
 	//A triangle, thus, contains a triplet of values corresponding to the 3 vertices of a triangle. 
     std::vector<Triangle> triangles;
