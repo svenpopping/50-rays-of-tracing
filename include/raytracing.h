@@ -45,7 +45,7 @@ void toggleDebug();
 void toggleFillColor();
 
 //Shadow Functions
-bool inShadow(const Vec3Df point);
+bool inShadow(const Vec3Df point, int index);
 
 // Shading functions
 Vec3Df shade(const Vec3Df origin, const Vec3Df intersection, int level, int triangleIndex, Vec3Df normal);
