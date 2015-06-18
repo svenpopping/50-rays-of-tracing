@@ -92,42 +92,48 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 
 Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
 
-	Vec3Df color = Vec3Df(0, 0, 0);
+	Vec3Df totalColor = Vec3Df(0, 0, 0);
   //ambient is only counted once
-  color += ambient(dir, intersection, level, triangleIndex);
+  totalColor += ambient(dir, intersection, level, triangleIndex);
 
   // loop for all lightpositions
   for(int i = 0; i < MyLightPositions.size(); ++i) {
     Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(i));
     Vec3Df viewDirection = MyCameraPosition - intersection;
 
+    Vec3Df color = Vec3Df(0, 0, 0);
+
     color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
     color += speculair(lightDirection, viewDirection.getNormalized(), triangleIndex);
-  }
+  
 	
-  unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-  Material mat = MyMesh.materials.at(triMat);
-  
-  if(debug)
-    std::cout   << mat.name() << std::endl;
+    unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
+    Material mat = MyMesh.materials.at(triMat);
+    
+    if(debug)
+      std::cout   << mat.name() << std::endl;
 
-  
-  if (level < MAX_LEVEL) {
-    level++;
-    if (mat.name().find(REFLECTION_NAME) != std::string::npos) { // Reflection
-      if(debug)
-        std::cout << "Reflecting..." << mat.name() << std::endl;
-      
-      color = color * (1 - mat.Tr()) + computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat) * (mat.Tr());
+    
+    if (level < MAX_LEVEL) {
+      level++;
+      if (mat.name().find(REFLECTION_NAME) != std::string::npos) { // Reflection
+        if(debug)
+          std::cout << "Reflecting..." << mat.name() << std::endl;
+        
+        color = color * (1 - mat.Tr()) + computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat) * (mat.Tr());
+      }
+      if (mat.name().find(REFRACTION_NAME) != std::string::npos) { // Refraction
+        if(debug)
+          std::cout << "Refracting..." << std::endl;
+        color = color * mat.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - mat.Tr());
+      }
     }
-    if (mat.name().find(REFRACTION_NAME) != std::string::npos) { // Refraction
-      if(debug)
-        std::cout << "Refracting..." << std::endl;
-      color = color * mat.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - mat.Tr());
-    }
+    
+    //add it to the total
+  	totalColor += clamp(color);
   }
-  
-	return clamp(color);
+
+  return clamp(totalColor);
 }
 
 //Ray Sphere::calcRefractingRay(const Ray &r, const Vector &intersection,Vector &normal, double & refl, double &trans)const
