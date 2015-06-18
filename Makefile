@@ -15,7 +15,7 @@ CXXFLAGS=-std=c++11 -Wall -Wextra -pedantic -Wno-unused-argument -Wno-unused-var
 include mk/$(shell uname -s).mk
 
 
-.PHONY: all onlytrace clean
+.PHONY: all onlytrace clean cleanresults
 all: $(BINARY)
 
 onlytrace: CPPFLAGS+=-DFIFTYRAYS_ONLYTRACE
@@ -30,6 +30,9 @@ clean:
 	rm -f $(OBJS)
 	rm -f $(BINARY)
 
+cleanresults:
+	rm -f result*.{ppm,bmp}
+
 $(BINARY): $(OBJS)
 	$(CXX) $(OBJS) $(LDFLAGS) -o $(BINARY)
 
@@ -41,4 +44,4 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 $(SRCDIR)/raytracing.cpp: $(INCDIR)/raytracing.h
 $(SRCDIR)/main.cpp: $(INCDIR)/raytracing.h $(INCDIR)/mesh.h $(INCDIR)/traqueboule.h $(INCDIR)/imageWriter.h
 $(SRCDIR)/mesh.cpp: $(INCDIR)/mesh.h
-$(INCDIR)/raytracing.h: ./config.h
+$(INCDIR)/raytracing.h: config.h
