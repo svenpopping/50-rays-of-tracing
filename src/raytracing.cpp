@@ -10,7 +10,7 @@
 #endif
 
 #include "raytracing.h"
-#include "helper.h"
+#include "helper.h" 
 
 //temporary variables
 //these are only used to illustrate
