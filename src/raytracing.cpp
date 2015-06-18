@@ -51,35 +51,42 @@ void init()
 //return the color of your pixel.
 Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 {
-  return trace(origin, dest, 0);
+  return trace(origin, dest.getNormalized(), 0);
 }
 
 Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
   float depth = FLT_MAX;
   Vec3Df color = Vec3Df(0, 0, 0);
-  Vec3Df debugIntersection = dir;
-  for (int i = 0; i < MyMesh.triangles.size(); i++){
-    Triangle triangle = MyMesh.triangles.at(i);
+  Vec3Df intersection;
+  bool intersectionFound= false;
+  
+  Triangle triangle;
+  
+  int index = NULL;
+  for (  int i = 0; i < MyMesh.triangles.size(); i++){
+    triangle = MyMesh.triangles.at(i);
     
-    Vec3Df intersection = rayTriangleIntersect(origin, dir, triangle, depth);
-    if (!isNulVector(intersection) && !(intersection == origin)){
+    Vec3Df testIntersection = rayTriangleIntersect(origin, dir, triangle, depth);
+    if (!isNulVector(testIntersection) && !(testIntersection == origin)){
+      intersectionFound = true;
+      intersection = testIntersection;
+      index = i;
       
-      if(debug){
-        debugIntersection = intersection;
-      }
-      // save color and depth
-      color = shade(dir, intersection, level, i, getNormal(triangle));
     }
     
   }
-  if(debug){
-    // std::cout << "Pushing ray..." << std::endl;
-    // std::cout << "Ray color: " << color << std::endl;
-
-    rayOrigins.push_back(origin);
-    rayIntersections.push_back(debugIntersection);
-    rayColors.push_back(color);
+  if(intersectionFound){
+    color = shade(dir, intersection, level, index, getNormal(MyMesh.triangles.at(index)));
+    if(debug){
+      std::cout << "Pushing ray..." << std::endl;
+      std::cout << "Ray color: " << color << std::endl;
+      
+      rayOrigins.push_back(origin);
+      rayIntersections.push_back(intersection);
+      rayColors.push_back(color);
+    }
   }
+  
   return color;
 }
 
@@ -99,13 +106,21 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
   unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
   Material mat = MyMesh.materials.at(triMat);
   
+  if(debug)
+    std::cout   << mat.name() << std::endl;
+
+  
   if (level < MAX_LEVEL) {
     level++;
     if (mat.name().find(REFLECTION_NAME) != std::string::npos) { // Reflection
-      //std::cout << "Reflecting..." << std::endl;
+      if(debug)
+        std::cout << "Reflecting..." << mat.name() << std::endl;
+      
       color = color * (1 - mat.Tr()) + computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat) * (mat.Tr());
     }
     if (mat.name().find(REFRACTION_NAME) != std::string::npos) { // Refraction
+      if(debug)
+        std::cout << "Refracting..." << std::endl;
       color = color * mat.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - mat.Tr());
     }
   }
@@ -160,7 +175,7 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
       //  }
       Vec3Df refractedRay = n * dir + (n * cosI - cosT)*normal;
       
-      Vec3Df color = trace(intersection, refractedRay, level);
+      Vec3Df color = trace(intersection, refractedRay.getNormalized(), level);
       
       return color;
     }
@@ -390,11 +405,14 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3
     case 't':
       toggleFillColor();
       break;
+      
+    // case any number
+      // Set light intensity of last light source
     default:
       if(debug){
         performRayTracing(rayOrigin, rayDestination);
         // std::cout << " The color from the ray is: ";
-        printVector(testColor);
+        //printVector(testColor);
         // std::cout << std::endl;
         // std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
       }
