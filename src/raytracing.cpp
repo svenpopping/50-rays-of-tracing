@@ -16,15 +16,16 @@
 //these are only used to illustrate
 //a simple debug drawing. A ray
 
-Vec3Df testRayOrigin;
-Vec3Df testRayDestination;
-Vec3Df testColor;
+Vec3Dd testRayOrigin;
+Vec3Dd testRayDestination;
+Vec3Dd testColor;
+
 int MAX_LEVEL = 5;
+int EPSILON = 0.0001;
 
-
-std::vector<Vec3Df> rayOrigins;
-std::vector<Vec3Df> rayIntersections;
-std::vector<Vec3Df> rayColors;
+std::vector<Vec3Dd> rayOrigins;
+std::vector<Vec3Dd> rayIntersections;
+std::vector<Vec3Dd> rayColors;
 
 bool debug;
 
@@ -51,16 +52,16 @@ void init()
 }
 
 //return the color of your pixel.
-Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
+Vec3Dd performRayTracing(const Vec3Dd & origin, const Vec3Dd & dest)
 {
     return trace(origin, dest, 0);
 }
 
-Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
-    float depth = FLT_MAX;
-    Vec3Df color = nullVector();
+Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
+    double depth = DBL_MAX;
+    Vec3Dd color = nullVector();
     int index;
-    Vec3Df intersection = nullVector();
+    Vec3Dd intersection = nullVector();
     bool intersectionFound = false;
 
     Triangle triangle;
@@ -70,7 +71,7 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
     for (  int i = 0; i < MyMesh.triangles.size(); i++){
       triangle = MyMesh.triangles.at(i);
       
-      Vec3Df testIntersection = rayTriangleIntersect(origin, dir, triangle, depth);
+      Vec3Dd testIntersection = rayTriangleIntersect(origin, dir, triangle, depth);
       if (!isNulVector(testIntersection) && !(testIntersection == origin)){
 
         intersectionFound = true;
@@ -82,7 +83,7 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
     }
 
     if(intersectionFound){
-      float ShadowScalar = 1.f - ShadowPercentage(intersection, index);
+      double ShadowScalar = 1.f - ShadowPercentage(intersection, index);
       color = shade(dir, intersection, level, index, getNormal(MyMesh.triangles.at(index)));
       color = color*ShadowScalar;
       if(debug){
@@ -97,9 +98,9 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
     return color;
 }
 
-float ShadowPercentage(const Vec3Df point, int j) {
+double ShadowPercentage(const Vec3Dd point, int j) {
     int Lightpoints = MyLightPositions.size();
-    float shadows = 0.0;
+    double shadows = 0.0;
     for (int i = 0; i < Lightpoints; i++) {
         if (inShadow(point, j, MyLightPositions.at(i))) {
             shadows++;
@@ -111,12 +112,12 @@ float ShadowPercentage(const Vec3Df point, int j) {
 }
 
 
-bool inShadow(const Vec3Df point, int j, const Vec3Df lightSource) {
-    float depth = FLT_MAX;
+bool inShadow(const Vec3Dd point, int j, const Vec3Dd lightSource) {
+    double depth = DBL_MAX;
     bool interrupt  = false;
     for (int i = 0; i < MyMesh.triangles.size(); i++) {
         Triangle triangle = MyMesh.triangles.at(i);
-        Vec3Df intersection = rayTriangleIntersect(point, lightSource, triangle, depth);
+        Vec3Dd intersection = rayTriangleIntersect(point, lightSource, triangle, depth);
         if (!isNulVector(intersection) && i != j) {
             interrupt = true;
         }
@@ -125,18 +126,18 @@ bool inShadow(const Vec3Df point, int j, const Vec3Df lightSource) {
 }
 
 
-Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
+Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex, const Vec3Dd N){
 
-	Vec3Df totalColor = Vec3Df(0, 0, 0);
+	Vec3Dd totalColor = Vec3Dd(0, 0, 0);
   //ambient is only counted once
   totalColor += ambient(dir, intersection, level, triangleIndex);
 
   // loop for all lightpositions
   for(int i = 0; i < MyLightPositions.size(); ++i) {
-    Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(i));
-    Vec3Df viewDirection = MyCameraPosition - intersection;
+    Vec3Dd lightDirection = lightVector(intersection, MyLightPositions.at(i));
+    Vec3Dd viewDirection = MyCameraPosition - intersection;
 
-    Vec3Df color = Vec3Df(0, 0, 0);
+    Vec3Dd color = Vec3Dd(0, 0, 0);
 
     color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
     color += speculair(lightDirection, viewDirection.getNormalized(), triangleIndex);
@@ -172,17 +173,17 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
 }
 
 //Ray Sphere::calcRefractingRay(const Ray &r, const Vector &intersection,Vector &normal, double & refl, double &trans)const
-Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
+Vec3Dd computeRefraction(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex){
     unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
     Material material = MyMesh.materials.at(triMat);
     if(material.Tr() < 1 && level < MAX_LEVEL){
-      float n1, n2, n;
+      double n1, n2, n;
       Triangle triangle = MyMesh.triangles.at(triangleIndex);
-      Vec3Df normal = getNormal(triangle);
+      Vec3Dd normal = getNormal(triangle);
       
-      float cosI = Vec3Df::dotProduct(dir, normal);
+      double cosI = Vec3Dd::dotProduct(dir, normal);
       
-      if(cosI > 0.0001)
+      if(cosI > EPSILON)
       {
         n1 = 1.0f;
         n2 = 1.0f;
@@ -196,13 +197,13 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
       }
       
       n = n1/n2;
-      float sinT2 = n*n * (1.0 - cosI * cosI);
-      float cosT = sqrt(1.0 - sinT2);
+      double sinT2 = n*n * (1.0 - cosI * cosI);
+      double cosT = sqrt(1.0 - sinT2);
       
       
       //fresnel equations
-      //  float  rn = (n1 * cosI - n2 * cosT)/(n1 * cosI + n2 * cosT);
-      //  float  rt = (n2 * cosI - n1 * cosT)/(n2 * cosI + n2 * cosT);
+      //  double  rn = (n1 * cosI - n2 * cosT)/(n1 * cosI + n2 * cosT);
+      //  double  rt = (n2 * cosI - n1 * cosT)/(n2 * cosI + n2 * cosT);
       //  rn *= rn;
       //  rt *= rt;
       //  refl = (rn + rt)*0.5;
@@ -215,9 +216,9 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
       //    trans = 0;
       //    return calcReflectingRay(r, intersection, normal);
       //  }
-      Vec3Df refractedRay = n * dir + (n * cosI - cosT)*normal;
+      Vec3Dd refractedRay = n * dir + (n * cosI - cosT)*normal;
       
-      Vec3Df color = trace(intersection, refractedRay.getNormalized(), level);
+      Vec3Dd color = trace(intersection, refractedRay.getNormalized(), level);
       
       return color;
     }
@@ -227,8 +228,8 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
 
 
 
-Vec3Df diffuse(const Vec3Df lightSource, Vec3Df normal,  int triangleIndex){
-    Vec3Df color = Vec3Df(0, 0, 0);
+Vec3Dd diffuse(const Vec3Dd lightSource, Vec3Dd normal,  int triangleIndex){
+    Vec3Dd color = Vec3Dd(0, 0, 0);
     unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
     
     // Probably split into RGB values of the material
@@ -237,51 +238,51 @@ Vec3Df diffuse(const Vec3Df lightSource, Vec3Df normal,  int triangleIndex){
     // Od = object color
     // Ld = lightSource color
     
-    color = color * std::fmax(0, Vec3Df::dotProduct(lightSource, normal));
+    color = color * std::fmax(0, Vec3Dd::dotProduct(lightSource, normal));
     return 1 * color;
 }
 
-Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex){
+Vec3Dd ambient(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex){
     unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-    Vec3Df ka = MyMesh.materials.at(triMat).Ka();
+    Vec3Dd ka = MyMesh.materials.at(triMat).Ka();
     // where Ka is surface property, Ia is light property
     return 1 * ka;
 }
 
 
-Vec3Df speculair(const Vec3Df lightDirection, const Vec3Df viewDirection, int triangleIndex){
-  Vec3Df lightN = lightDirection / lightDirection.getLength();
-  Vec3Df N = getNormal(MyMesh.triangles.at(triangleIndex));
-  Vec3Df normalN = N / N.getLength();
+Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int triangleIndex){
+  Vec3Dd lightN = lightDirection / lightDirection.getLength();
+  Vec3Dd N = getNormal(MyMesh.triangles.at(triangleIndex));
+  Vec3Dd normalN = N / N.getLength();
   
-  Vec3Df reflection = reflectionVector(lightN, normalN);
-	Vec3Df color = Vec3Df(0, 0, 0);
+  Vec3Dd reflection = reflectionVector(lightN, normalN);
+	Vec3Dd color = Vec3Dd(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 	color = MyMesh.materials.at(triMat).Ks();
-	Vec3Df spec = color * pow(std::fmax(Vec3Df::dotProduct(reflection, viewDirection), 0.0), 16);
+	Vec3Dd spec = color * pow(std::fmax(Vec3Dd::dotProduct(reflection, viewDirection), 0.0), 16);
 	return spec;
 
 }
 
 
-Vec3Df lightVector(const Vec3Df point, const Vec3Df lightPoint){
-    Vec3Df lightDir = Vec3Df(0, 0, 0);
+Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint){
+    Vec3Dd lightDir = Vec3Dd(0, 0, 0);
     lightDir = lightPoint - point;
     return lightDir;
 }
 
-Vec3Df reflectionVector(const Vec3Df lightDirection, const Vec3Df normalVector) {
-    Vec3Df reflection = Vec3Df(0, 0, 0);
-    reflection = 2 * (Vec3Df::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
+Vec3Dd reflectionVector(const Vec3Dd lightDirection, const Vec3Dd normalVector) {
+    Vec3Dd reflection = Vec3Dd(0, 0, 0);
+    reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
     return reflection;
 }
 // We can also add textures!
 
 
-Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersection, const Vec3Df normalVector, int level, Material mat) {
-    //    Vec3Df reflection = (2 * Vec3Df::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
-    Vec3Df reflection = viewDirection - 2 * Vec3Df::dotProduct(normalVector, viewDirection) * normalVector;
-    // Vec3Df reflection = 2 * (Vec3Df::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
+Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersection, const Vec3Dd normalVector, int level, Material mat) {
+    //    Vec3Dd reflection = (2 * Vec3Dd::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
+    Vec3Dd reflection = viewDirection - 2 * Vec3Dd::dotProduct(normalVector, viewDirection) * normalVector;
+    // Vec3Dd reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
     
     return trace(intersection, reflection.getNormalized(), level);
 }
@@ -290,54 +291,54 @@ Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersec
 // The source of this function is:
 // http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 // Returns the point of intersection
-Vec3Df rayTriangleIntersect(const Vec3Df &orig, const Vec3Df &dir, const Triangle triangle, float &depth)
+Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangle triangle, double &depth)
 {
     // compute plane's normal
-    Vec3Df N = getNormal(triangle);
+    Vec3Dd N = getNormal(triangle);
     
-    Vec3Df v0 = MyMesh.vertices.at(triangle.v[0]).p;
-    Vec3Df v1 = MyMesh.vertices.at(triangle.v[1]).p;
-    Vec3Df v2 = MyMesh.vertices.at(triangle.v[2]).p;
+    Vec3Dd v0 = MyMesh.vertices.at(triangle.v[0]).p;
+    Vec3Dd v1 = MyMesh.vertices.at(triangle.v[1]).p;
+    Vec3Dd v2 = MyMesh.vertices.at(triangle.v[2]).p;
     
     // Step 1: finding P (the point where the ray intersects the plane)
     
     // check if ray and plane are parallel ?
-    float NdotRayDirection = Vec3Df::dotProduct(N, dir);
-    if (fabs(NdotRayDirection) < 0.000000001) // almost 0
+    double NdotRayDirection = Vec3Dd::dotProduct(N, dir);
+    if (fabs(NdotRayDirection) < EPSILON) // almost 0
         return nullVector(); // they are parallel so they don't intersect !
     
     // compute d parameter using equation 2 (d is the distance from the origin (0, 0, 0) to the plane)
-    float d = Vec3Df::dotProduct(N, v0);
+    double d = Vec3Dd::dotProduct(N, v0);
     
     // compute t (equation 3) (t is distance from the ray origin to P)
-    float t = (-Vec3Df::dotProduct(N, orig) + d) / NdotRayDirection;
+    double t = (-Vec3Dd::dotProduct(N, orig) + d) / NdotRayDirection;
     // check if the triangle is in behind the ray
-    if (t < 0) return nullVector(); // the triangle is behind
+    if (t < EPSILON) return nullVector(); // the triangle is behind
     if (t > depth) return nullVector(); // already have something closerby
     
     // compute the intersection point P using equation 1
-    Vec3Df P = orig + t * dir;
+    Vec3Dd P = orig + t * dir;
     
     // Step 2: inside-outside test
-    Vec3Df C; // vector perpendicular to triangle's plane
+    Vec3Dd C; // vector perpendicular to triangle's plane
     
     // edge 0
-    Vec3Df edge0 = v1 - v0;
-    Vec3Df vp0 = P - v0;
-    C = Vec3Df::crossProduct(edge0, vp0);
-    if (Vec3Df::dotProduct(N, C) < 0) return nullVector(); // P is on the right side
+    Vec3Dd edge0 = v1 - v0;
+    Vec3Dd vp0 = P - v0;
+    C = Vec3Dd::crossProduct(edge0, vp0);
+    if (Vec3Dd::dotProduct(N, C) < 0) return nullVector(); // P is on the right side
     
     // edge 1
-    Vec3Df edge1 = v2 - v1;
-    Vec3Df vp1 = P - v1;
-    C = Vec3Df::crossProduct(edge1, vp1);
-    if (Vec3Df::dotProduct(N, C) < 0) return nullVector(); // P is on the right side
+    Vec3Dd edge1 = v2 - v1;
+    Vec3Dd vp1 = P - v1;
+    C = Vec3Dd::crossProduct(edge1, vp1);
+    if (Vec3Dd::dotProduct(N, C) < 0) return nullVector(); // P is on the right side
     
     // edge 2
-    Vec3Df edge2 = v0 - v2;
-    Vec3Df vp2 = P - v2;
-    C = Vec3Df::crossProduct(edge2, vp2);
-    if (Vec3Df::dotProduct(N, C) < 0) return nullVector(); // P is on the right side;
+    Vec3Dd edge2 = v0 - v2;
+    Vec3Dd vp2 = P - v2;
+    C = Vec3Dd::crossProduct(edge2, vp2);
+    if (Vec3Dd::dotProduct(N, C) < 0) return nullVector(); // P is on the right side;
     
     depth = t;
     return P; // this is the intersectionpoint
@@ -365,29 +366,29 @@ void yourDebugDraw()
     //let's draw the lights in the scene as points
     glPushAttrib(GL_ALL_ATTRIB_BITS); //store all GL attributes
     glDisable(GL_LIGHTING);
-    glColor3f(1, 1, 1);
+    glColor3d(1, 1, 1);
     glPointSize(10);
     glBegin(GL_POINTS);
     for (int i = 0; i<MyLightPositions.size(); ++i)
-        glVertex3fv(MyLightPositions[i].pointer());
+        glVertex3dv(MyLightPositions[i].pointer());
     
     //Show rays
     if(debug){
-        for(std::vector<Vec3Df>::size_type i = 0; i != rayColors.size(); i++) {
-            Vec3Df color = rayColors.at(i);
-            Vec3Df origin = rayOrigins.at(i);
-            Vec3Df intersection = rayIntersections.at(i);
+        for(std::vector<Vec3Dd>::size_type i = 0; i != rayColors.size(); i++) {
+            Vec3Dd color = rayColors.at(i);
+            Vec3Dd origin = rayOrigins.at(i);
+            Vec3Dd intersection = rayIntersections.at(i);
             
             glBegin(GL_LINES);
-            glColor3f(color[0], color[1], color[2]);
-            glVertex3f(origin[0], origin[1], origin[2]);
-            glColor3f(color[0], color[1], color[2]);
-            glVertex3f(intersection[0], intersection[1], intersection[2]);
+            glColor3d(color[0], color[1], color[2]);
+            glVertex3d(origin[0], origin[1], origin[2]);
+            glColor3d(color[0], color[1], color[2]);
+            glVertex3d(intersection[0], intersection[1], intersection[2]);
             glEnd();
             
             glPointSize(3);
             glBegin(GL_POINTS);
-            glVertex3fv(intersection.pointer());
+            glVertex3dv(intersection.pointer());
             glEnd();
         }
     }
@@ -396,7 +397,7 @@ void yourDebugDraw()
     // Show light positions
     glPointSize(10);
     glBegin(GL_POINTS);
-    glVertex3fv(MyLightPositions[0].pointer());
+    glVertex3dv(MyLightPositions[0].pointer());
     glEnd();
     glPopAttrib();
     
@@ -431,7 +432,7 @@ void yourDebugDraw()
 // 't' Toggles the debug view
 // 'c' Adds the option to clear the debugvectors
 
-void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3Df & rayDestination){
+void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination){
 
 	//here, as an example, I use the ray to fill in the values for my upper global ray variable
 	//I use these variables in the debugDraw function to draw the corresponding ray.

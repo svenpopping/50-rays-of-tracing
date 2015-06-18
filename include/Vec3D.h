@@ -9,11 +9,11 @@ template <class T> bool operator!= (const Vec3D<T> & p1, const Vec3D<T> & p2) {
     return (p1[0] != p2[0] || p1[1] != p2[1] || p1[2] != p2[2]);
 }
 
-template <class T> const Vec3D<T> operator* (const Vec3D<T> & p, float factor) {
+template <class T> const Vec3D<T> operator* (const Vec3D<T> & p, double factor) {
     return Vec3D<T> (p[0] * factor, p[1] * factor, p[2] * factor);
 }
 
-template <class T> const Vec3D<T> operator* (float factor, const Vec3D<T> & p) {
+template <class T> const Vec3D<T> operator* (double factor, const Vec3D<T> & p) {
     return Vec3D<T> (p[0] * factor, p[1] * factor, p[2] * factor);
 }
 
@@ -33,7 +33,7 @@ template <class T> const Vec3D<T> operator- (const Vec3D<T> & p) {
     return Vec3D<T> (-p[0], -p[1], -p[2]);
 }
 
-template <class T> const Vec3D<T> operator/ (const Vec3D<T> & p, float divisor) {
+template <class T> const Vec3D<T> operator/ (const Vec3D<T> & p, double divisor) {
     return Vec3D<T> (p[0]/divisor, p[1]/divisor, p[2]/divisor);
 }
 
@@ -161,7 +161,7 @@ public:
         p[1] = P2[1] - P1[1];
         p[2] = P2[2] - P1[2];
     };
-    inline float transProduct (const Vec3D & v) const {
+    inline double transProduct (const Vec3D & v) const {
         return (p[0]*v[0] + p[1]*v[1] + p[2]*v[2]);
     }
     inline void getTwoOrthogonals (Vec3D & u, Vec3D & v) const {
@@ -291,6 +291,6 @@ template <class T> std::istream & operator>> (std::istream & input, Vec3D<T> & v
     return input;
 }
 
-typedef Vec3D<float> Vec3Df;
+typedef Vec3D<double> Vec3Dd;
 typedef Vec3D<double> Vec3Dd;
 typedef Vec3D<int> Vec3Di;

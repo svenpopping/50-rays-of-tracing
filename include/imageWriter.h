@@ -22,7 +22,7 @@
  class RGBValue
 {
 	public:
-	RGBValue(float rI=0, float gI=0, float bI=0)
+	RGBValue(double rI=0, double gI=0, double bI=0)
 	: r(rI)
 	, g(gI)
 	, b(bI)
@@ -42,7 +42,7 @@
 			b=0.0;
 	};
 	
-	float operator[](int i) const
+	double operator[](int i) const
 	{
 		switch(i)
 		{
@@ -56,7 +56,7 @@
 				return r;
 		}
 	}
-	float & operator[](int i)
+	double & operator[](int i)
 	{
 		switch(i)
 		{
@@ -70,7 +70,7 @@
 				return r;
 		}
 	}
-	float r, b,g;
+	double r, b,g;
 };
 
 
@@ -93,7 +93,7 @@ class Image
 		_image[3*(_width*j+i)+2]=rgb[2];
 		
 	}
-	std::vector<float> _image;
+	std::vector<double> _image;
 	int _width;
 	int _height;
 

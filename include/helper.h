@@ -17,18 +17,18 @@
 
 extern Mesh MyMesh; //Main mesh
 
-void printVector(Vec3Df vector);
+void printVector(Vec3Dd vector);
 void printVertex(Vertex vertex);
 
 void printLine(std::string string);
 void print(std::string string);
 
-Vec3Df clamp(Vec3Df vector);
+Vec3Dd clamp(Vec3Dd vector);
 
-Vec3Df nullVector();
-bool isNulVector(Vec3Df vector);
+Vec3Dd nullVector();
+bool isNulVector(Vec3Dd vector);
 
-Vec3Df getNormal(Triangle triangle);
+Vec3Dd getNormal(Triangle triangle);
 
 unsigned getThreadCount(void);
 

@@ -9,8 +9,8 @@
 class Vertex {
 public:
     inline Vertex () {}
-    inline Vertex (const Vec3Df & p) : p (p) {}
-    inline Vertex (const Vec3Df & p, const Vec3Df & n) : p (p), n (n){}
+    inline Vertex (const Vec3Dd & p) : p (p) {}
+    inline Vertex (const Vec3Dd & p, const Vec3Dd & n) : p (p), n (n){}
     inline Vertex (const Vertex & v) : p (v.p), n (v.n){}
     inline virtual ~Vertex () {}
     inline Vertex & operator= (const Vertex & v) {
@@ -18,8 +18,8 @@ public:
         n = v.n;
 		return (*this);
     }
-    Vec3Df p;
-    Vec3Df n;
+    Vec3Dd p;
+    Vec3Dd n;
 };
 
 
