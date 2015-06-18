@@ -27,17 +27,15 @@ void printVertex(Vertex vertex){
 }
 
 // Clamp color between .. and 1
-Vec3Df clamp(Vec3Df vertex) {
-    if(vertex[0] > 1)
-        vertex[0] = 1;
+Vec3Df clamp(Vec3Df color) {
+  for (int i = 0; i < 3; i++) {
+    if (color[i] > 1)
+      color[i] = 1;
+    if (color[i] < 0)
+      color[i] = 0;
+  }
     
-    if(vertex[1] > 1)
-        vertex[1] = 1;
-    
-    if(vertex[2] > 1)
-        vertex[2] = 1;
-    
-    return vertex;
+    return color;
 }
 
 Vec3Df nullVector(){

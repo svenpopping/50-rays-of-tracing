@@ -18,10 +18,8 @@
 Vec3Df testRayOrigin;
 Vec3Df testRayDestination;
 Vec3Df testColor;
-int MAX_LEVEL = 3;
+int MAX_LEVEL = 5;
 
-// Add max level
-int maxLevel = 3;
 
 std::vector<Vec3Df> rayOrigins;
 std::vector<Vec3Df> rayIntersections;
@@ -90,36 +88,29 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
 	Vec3Df color = Vec3Df(0, 0, 0);
     
   // TODO: add extra light source code
-
 	Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(0));
 	Vec3Df viewDirection = MyCameraPosition - intersection;
-	Vec3Df reflectionColor;
 
   // color = mat.Ka() + reflectionColor;
 	color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
 	color += ambient(dir, intersection, level, triangleIndex);
-	color += speculair(reflectionColor.getNormalized(), viewDirection.getNormalized(), triangleIndex);
+	color += speculair(lightDirection, viewDirection.getNormalized(), triangleIndex);
 
   unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
   Material mat = MyMesh.materials.at(triMat);
   
-  if (level < maxLevel) {
+  if (level < MAX_LEVEL) {
     level++;
-    if (mat.name().find("002") != std::string::npos) { // Reflection
+    if (mat.name().find(REFLECTION_NAME) != std::string::npos) { // Reflection
       //std::cout << "Reflecting..." << std::endl;
-      color = computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat);
-    } else {
+      color = color * (1 - mat.Tr()) + computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat) * (mat.Tr());
+    }
+    if (mat.name().find(REFRACTION_NAME) != std::string::npos) { // Refraction
       color = color * mat.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - mat.Tr());
     }
   }
   
-	for (int i = 0; i < 3; i++) {
-		if (color[i] > 1)
-			color[i] = 1;
-		if (color[i] < 0)
-			color[i] = 0;
-	}
-	return color;
+	return clamp(color);
 }
 
 //Ray Sphere::calcRefractingRay(const Ray &r, const Vector &intersection,Vector &normal, double & refl, double &trans)const
@@ -200,7 +191,12 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
 	return 1 * ka;
 }
 
-Vec3Df speculair(const Vec3Df reflection, const Vec3Df viewDirection, int triangleIndex){
+Vec3Df speculair(const Vec3Df lightDirection, const Vec3Df viewDirection, int triangleIndex){
+  Vec3Df lightN = lightDirection / lightDirection.getLength();
+  Vec3Df N = getNormal(MyMesh.triangles.at(triangleIndex));
+  Vec3Df normalN = N / N.getLength();
+  
+  Vec3Df reflection = reflectionVector(lightN, normalN);
 	Vec3Df color = Vec3Df(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 	color = MyMesh.materials.at(triMat).Ks();
