@@ -250,7 +250,7 @@ Vec3Df computeReflectionVector(const Vec3Df viewDirection, const Vec3Df intersec
     Vec3Df reflection = viewDirection - 2 * Vec3Df::dotProduct(normalVector, viewDirection) * normalVector;
     // Vec3Df reflection = 2 * (Vec3Df::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
     
-    return mat.Tr() * trace(intersection, reflection.getNormalized(), level);
+    return trace(intersection, reflection.getNormalized(), level);
 }
 // We can also add textures!
 
