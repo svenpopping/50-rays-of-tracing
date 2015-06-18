@@ -125,6 +125,9 @@ int main(int argc, char** argv)
     init();
 
 #if defined(FIFTYRAYS_ONLYTRACE)
+    reshape(WindowSize_X,WindowSize_Y);
+    display();
+    animate();
     startRaytracing();
 #else    
 	//main loop for glut... this just runs your application
