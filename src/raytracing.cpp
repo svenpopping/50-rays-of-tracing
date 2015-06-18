@@ -19,7 +19,9 @@
 Vec3Dd testRayOrigin;
 Vec3Dd testRayDestination;
 Vec3Dd testColor;
+
 int MAX_LEVEL = 5;
+int EPSILON = 0.0001;
 
 std::vector<Vec3Dd> rayOrigins;
 std::vector<Vec3Dd> rayIntersections;
@@ -181,7 +183,7 @@ Vec3Dd computeRefraction(const Vec3Dd dir, const Vec3Dd intersection, int level,
       
       double cosI = Vec3Dd::dotProduct(dir, normal);
       
-      if(cosI > 0.0001)
+      if(cosI > EPSILON)
       {
         n1 = 1.0f;
         n2 = 1.0f;
@@ -302,7 +304,7 @@ Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangl
     
     // check if ray and plane are parallel ?
     double NdotRayDirection = Vec3Dd::dotProduct(N, dir);
-    if (fabs(NdotRayDirection) < 0.000000001) // almost 0
+    if (fabs(NdotRayDirection) < EPSILON) // almost 0
         return nullVector(); // they are parallel so they don't intersect !
     
     // compute d parameter using equation 2 (d is the distance from the origin (0, 0, 0) to the plane)
@@ -311,7 +313,7 @@ Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangl
     // compute t (equation 3) (t is distance from the ray origin to P)
     double t = (-Vec3Dd::dotProduct(N, orig) + d) / NdotRayDirection;
     // check if the triangle is in behind the ray
-    if (t < 0) return nullVector(); // the triangle is behind
+    if (t < EPSILON) return nullVector(); // the triangle is behind
     if (t > depth) return nullVector(); // already have something closerby
     
     // compute the intersection point P using equation 1
