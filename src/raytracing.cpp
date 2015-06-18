@@ -93,16 +93,18 @@ Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
 Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
 
 	Vec3Df color = Vec3Df(0, 0, 0);
-    
-  // TODO: add extra light source code
-	Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(0));
-	Vec3Df viewDirection = MyCameraPosition - intersection;
+  //ambient is only counted once
+  color += ambient(dir, intersection, level, triangleIndex);
 
-  // color = mat.Ka() + reflectionColor;
-	color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
-	color += ambient(dir, intersection, level, triangleIndex);
-	color += speculair(lightDirection, viewDirection.getNormalized(), triangleIndex);
+  // loop for all lightpositions
+  for(int i = 0; i < MyLightPositions.size(); ++i) {
+    Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(i));
+    Vec3Df viewDirection = MyCameraPosition - intersection;
 
+    color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
+    color += speculair(lightDirection, viewDirection.getNormalized(), triangleIndex);
+  }
+	
   unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
   Material mat = MyMesh.materials.at(triMat);
   
