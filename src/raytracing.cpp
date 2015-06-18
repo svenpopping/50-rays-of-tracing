@@ -135,7 +135,7 @@ Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangl
     
     if (level < maxLevel) {
         level++;
-        if (mat.name().find("002") != std::string::npos) { // Reflection
+        if (mat.name().find(REFLECTION_NAME) != std::string::npos) { // Reflection
             //std::cout << "Reflecting..." << std::endl;
             color = computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat);
         } else {
@@ -164,7 +164,7 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
         
         float cosI = Vec3Df::dotProduct(dir, normal);
         
-        if(cosI > 0.0001)
+        if(cosI > 0.00000001)
         {
             n1 = 1.0f;
             n2 = 1.0f;
