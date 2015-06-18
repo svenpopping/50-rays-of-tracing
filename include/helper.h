@@ -30,4 +30,6 @@ bool isNulVector(Vec3Df vector);
 
 Vec3Df getNormal(Triangle triangle);
 
+unsigned getThreadCount(void);
+
 #endif

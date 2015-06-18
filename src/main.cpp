@@ -14,17 +14,15 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <vector>
+#include <thread>
+#include <utility>
+#include <functional>
 #include "raytracing.h"
 #include "mesh.h"
 #include "traqueboule.h"
 #include "imageWriter.h"
-
-
-//This is the main application
-//Most of the code in here, does not need to be modified.
-//It is enough to take a look at the function "drawFrame",
-//in case you want to provide your own different drawing functions
-
+#include "helper.h"
 
 
 Vec3Df MyCameraPosition;
@@ -41,7 +39,8 @@ Mesh MyMesh;
 unsigned int WindowSize_X = 800;  // resolution X
 unsigned int WindowSize_Y = 800;  // resolution Y
 
-
+// Worker threads.
+unsigned threads;
 
 
 /**
@@ -64,6 +63,7 @@ void display(void);
 void reshape(int w, int h);
 void keyboard(unsigned char key, int x, int y);
 void startRaytracing();
+void doThreadTrace(Image &result, Vec3Df &origin00, Vec3Df &dest00, Vec3Df &origin01, Vec3Df &dest01, Vec3Df &origin10, Vec3Df &dest10, Vec3Df &origin11, Vec3Df &dest11, int id, unsigned minY, unsigned maxY);
 
 /**
  * Main Programme
@@ -121,6 +121,10 @@ int main(int argc, char** argv)
     glutMotionFunc(tbMotionFunc);  // uses mouse
     glutIdleFunc( animate);
 
+
+    // thread setup.
+    threads = getThreadCount();
+    printf("Detected %u threads.\n", threads);
 
     init();
 
@@ -237,21 +241,35 @@ void startRaytracing() {
   Vec3Df origin01, dest01;
   Vec3Df origin10, dest10;
   Vec3Df origin11, dest11;
-  Vec3Df origin, dest;
-
 
   produceRay(0,0, &origin00, &dest00);
   produceRay(0,WindowSize_Y-1, &origin01, &dest01);
   produceRay(WindowSize_X-1,0, &origin10, &dest10);
   produceRay(WindowSize_X-1,WindowSize_Y-1, &origin11, &dest11);
 
-  
-  for (unsigned int y=0; y<WindowSize_Y;++y)
+  std::vector<std::thread> t;
+  for (unsigned n = 0; n < threads; n++)
+    t.push_back(std::thread(std::bind(doThreadTrace, std::ref(result), std::ref(origin00), std::ref(dest00), std::ref(origin01), std::ref(dest01), std::ref(origin10), std::ref(dest10), std::ref(origin11), std::ref(dest11), n + 1, (unsigned)((float)n / threads * WindowSize_Y), (unsigned)((float)(n + 1) / threads * WindowSize_Y))));
+  for (unsigned n = 0; n < threads; n++)
+    t[n].join();
+
+  char filename[64];
+#if defined(_MSC_VER)
+  _snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
+#else    
+  snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
+#endif
+  result.writeImage(filename);
+}
+
+void doThreadTrace(Image &result, Vec3Df &origin00, Vec3Df &dest00, Vec3Df &origin01, Vec3Df &dest01, Vec3Df &origin10, Vec3Df &dest10, Vec3Df &origin11, Vec3Df &dest11, int id, unsigned minY, unsigned maxY) {
+  Vec3Df origin, dest;
+  for (unsigned int y=minY; y<maxY;++y)
   {
 
-    if (y % (WindowSize_Y / 20) == 0) {
-      float perc = (float)y / (float)WindowSize_Y;
-      std::cout << 100 * perc << "%" << std::endl;
+    if ((y - minY) % ((maxY - minY) / 20) == 0) {
+      float perc = (float)(y - minY) / (float)(maxY - minY);
+      std::cout << "[thread #" << id << "] " << 100 * perc << "%" << std::endl;
     }
 
     for (unsigned int x=0; x<WindowSize_X;++x) {
@@ -271,15 +289,4 @@ void startRaytracing() {
       result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
     }
   }
-
-
-  char filename[64];
-
-  #if defined(_MSC_VER)
-    _snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
-  #else    
-    snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
-  #endif
-
-  result.writeImage(filename);
 }
