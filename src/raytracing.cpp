@@ -10,7 +10,7 @@
 #endif
 
 #include "raytracing.h"
-#include "helper.h"
+#include "helper.h" 
 
 //temporary variables
 //these are only used to illustrate
@@ -19,10 +19,8 @@
 Vec3Df testRayOrigin;
 Vec3Df testRayDestination;
 Vec3Df testColor;
-int MAX_LEVEL = 3;
+int MAX_LEVEL = 5;
 
-// Add max level
-int maxLevel = 3;
 
 std::vector<Vec3Df> rayOrigins;
 std::vector<Vec3Df> rayIntersections;
@@ -60,30 +58,41 @@ Vec3Df performRayTracing(const Vec3Df & origin, const Vec3Df & dest)
 
 Vec3Df trace(const Vec3Df & origin, const Vec3Df & dir, int level){
     float depth = FLT_MAX;
-    Vec3Df color = Vec3Df(0, 0, 0);
-    Vec3Df debugIntersection = dir;
-    for (int i = 0; i < MyMesh.triangles.size(); i++){
-        Triangle triangle = MyMesh.triangles.at(i);
+    Vec3Df color = nullVector();
+    int index;
+    Vec3Df intersection = nullVector();
+    bool intersectionFound = false;
+
+    Triangle triangle;
+
+
+
+    for (  int i = 0; i < MyMesh.triangles.size(); i++){
+      triangle = MyMesh.triangles.at(i);
+      
+      Vec3Df testIntersection = rayTriangleIntersect(origin, dir, triangle, depth);
+      if (!isNulVector(testIntersection) && !(testIntersection == origin)){
+
+        intersectionFound = true;
+        intersection = testIntersection;
+        index = i;
         
-        Vec3Df intersection = rayTriangleIntersect(origin, dir, triangle, depth);
-        if (!isNulVector(intersection) && !(intersection == origin)){
-            
-            if(debug){
-                debugIntersection = intersection;
-            }
-            // save color and depth
-            float ShadowScalar = 1.f - ShadowPercentage(intersection, i);
-            color = shade(dir, intersection, level, i, getNormal(triangle));
-            color = color*ShadowScalar;
-        }
+      }
+      
     }
-    if(debug){
-        // std::cout << "Pushing ray..." << std::endl;
-        // std::cout << "Ray color: " << color << std::endl;
+
+    if(intersectionFound){
+      float ShadowScalar = 1.f - ShadowPercentage(intersection, index);
+      color = shade(dir, intersection, level, index, getNormal(MyMesh.triangles.at(index)));
+      color = color*ShadowScalar;
+      if(debug){
+        std::cout << "Pushing ray..." << std::endl;
+        std::cout << "Ray color: " << color << std::endl;
         
         rayOrigins.push_back(origin);
-        rayIntersections.push_back(debugIntersection);
+        rayIntersections.push_back(intersection);
         rayColors.push_back(color);
+      }
     }
     return color;
 }
@@ -101,6 +110,7 @@ float ShadowPercentage(const Vec3Df point, int j) {
     return shadows;
 }
 
+
 bool inShadow(const Vec3Df point, int j, const Vec3Df lightSource) {
     float depth = FLT_MAX;
     bool interrupt  = false;
@@ -116,40 +126,49 @@ bool inShadow(const Vec3Df point, int j, const Vec3Df lightSource) {
 
 
 Vec3Df shade(const Vec3Df dir, const Vec3Df intersection, int level, int triangleIndex, const Vec3Df N){
-    
-    Vec3Df color = Vec3Df(0, 0, 0);
-    
-    // TODO: add extra light source code
-    
-    Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(0));
+
+	Vec3Df totalColor = Vec3Df(0, 0, 0);
+  //ambient is only counted once
+  totalColor += ambient(dir, intersection, level, triangleIndex);
+
+  // loop for all lightpositions
+  for(int i = 0; i < MyLightPositions.size(); ++i) {
+    Vec3Df lightDirection = lightVector(intersection, MyLightPositions.at(i));
     Vec3Df viewDirection = MyCameraPosition - intersection;
-    Vec3Df reflectionColor;
-    
-    // color = mat.Ka() + reflectionColor;
+
+    Vec3Df color = Vec3Df(0, 0, 0);
+
     color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
-    color += ambient(dir, intersection, level, triangleIndex);
-    color += speculair(reflectionColor.getNormalized(), viewDirection.getNormalized(), triangleIndex);
-    
+    color += speculair(lightDirection, viewDirection.getNormalized(), triangleIndex);
+  
+	
     unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
     Material mat = MyMesh.materials.at(triMat);
     
-    if (level < maxLevel) {
-        level++;
-        if (mat.name().find(REFLECTION_NAME) != std::string::npos) { // Reflection
-            //std::cout << "Reflecting..." << std::endl;
-            color = computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat);
-        } else {
-            color = color * mat.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - mat.Tr());
-        }
+    if(debug)
+      std::cout   << mat.name() << std::endl;
+
+    
+    if (level < MAX_LEVEL) {
+      level++;
+      if (mat.name().find(REFLECTION_NAME) != std::string::npos) { // Reflection
+        if(debug)
+          std::cout << "Reflecting..." << mat.name() << std::endl;
+        
+        color = color * (1 - mat.Tr()) + computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat) * (mat.Tr());
+      }
+      if (mat.name().find(REFRACTION_NAME) != std::string::npos) { // Refraction
+        if(debug)
+          std::cout << "Refracting..." << std::endl;
+        color = color * mat.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - mat.Tr());
+      }
     }
     
-    for (int i = 0; i < 3; i++) {
-        if (color[i] > 1)
-            color[i] = 1;
-        if (color[i] < 0)
-            color[i] = 0;
-    }
-    return color;
+    //add it to the total
+  	totalColor += clamp(color);
+  }
+
+  return clamp(totalColor);
 }
 
 //Ray Sphere::calcRefractingRay(const Ray &r, const Vector &intersection,Vector &normal, double & refl, double &trans)const
@@ -157,51 +176,50 @@ Vec3Df computeRefraction(const Vec3Df dir, const Vec3Df intersection, int level,
     unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
     Material material = MyMesh.materials.at(triMat);
     if(material.Tr() < 1 && level < MAX_LEVEL){
-        
-        float n1, n2, n;
-        Triangle triangle = MyMesh.triangles.at(triangleIndex);
-        Vec3Df normal = getNormal(triangle);
-        
-        float cosI = Vec3Df::dotProduct(dir, normal);
-        
-        if(cosI > 0.00000001)
-        {
-            n1 = 1.0f;
-            n2 = 1.0f;
-            normal = -normal;//invert
-        }
-        else
-        {
-            n1 = 1.0f;
-            n2 = 1.0f;
-            cosI = -cosI;
-        }
-        
-        n = n1/n2;
-        float sinT2 = n*n * (1.0 - cosI * cosI);
-        float cosT = sqrt(1.0 - sinT2);
-        
-        
-        //fresnel equations
-        //  float  rn = (n1 * cosI - n2 * cosT)/(n1 * cosI + n2 * cosT);
-        //  float  rt = (n2 * cosI - n1 * cosT)/(n2 * cosI + n2 * cosT);
-        //  rn *= rn;
-        //  rt *= rt;
-        //  refl = (rn + rt)*0.5;
-        //  trans = 1.0 - refl;
-        //  if(n == 1.0)
-        //    return r;
-        //  if(cosT*cosT < 0.0)//tot inner refl
-        //  {
-        //    refl = 1;
-        //    trans = 0;
-        //    return calcReflectingRay(r, intersection, normal);
-        //  }
-        Vec3Df refractedRay = n * dir + (n * cosI - cosT)*normal;
-        
-        Vec3Df color = trace(intersection, refractedRay, level);
-        
-        return color;
+      float n1, n2, n;
+      Triangle triangle = MyMesh.triangles.at(triangleIndex);
+      Vec3Df normal = getNormal(triangle);
+      
+      float cosI = Vec3Df::dotProduct(dir, normal);
+      
+      if(cosI > 0.0001)
+      {
+        n1 = 1.0f;
+        n2 = 1.0f;
+        normal = -normal;//invert
+      }
+      else
+      {
+        n1 = 1.0f;
+        n2 = 1.0f;
+        cosI = -cosI;
+      }
+      
+      n = n1/n2;
+      float sinT2 = n*n * (1.0 - cosI * cosI);
+      float cosT = sqrt(1.0 - sinT2);
+      
+      
+      //fresnel equations
+      //  float  rn = (n1 * cosI - n2 * cosT)/(n1 * cosI + n2 * cosT);
+      //  float  rt = (n2 * cosI - n1 * cosT)/(n2 * cosI + n2 * cosT);
+      //  rn *= rn;
+      //  rt *= rt;
+      //  refl = (rn + rt)*0.5;
+      //  trans = 1.0 - refl;
+      //  if(n == 1.0)
+      //    return r;
+      //  if(cosT*cosT < 0.0)//tot inner refl
+      //  {
+      //    refl = 1;
+      //    trans = 0;
+      //    return calcReflectingRay(r, intersection, normal);
+      //  }
+      Vec3Df refractedRay = n * dir + (n * cosI - cosT)*normal;
+      
+      Vec3Df color = trace(intersection, refractedRay.getNormalized(), level);
+      
+      return color;
     }
     return nullVector();
 }
@@ -230,13 +248,19 @@ Vec3Df ambient(const Vec3Df dir, const Vec3Df intersection, int level, int trian
     return 1 * ka;
 }
 
-Vec3Df speculair(const Vec3Df reflection, const Vec3Df viewDirection, int triangleIndex){
-    Vec3Df color = Vec3Df(0, 0, 0);
-    unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-    color = MyMesh.materials.at(triMat).Ks();
-    Vec3Df spec = color * pow(std::fmax(Vec3Df::dotProduct(reflection, viewDirection), 0.0), 16);
-    return spec;
-    
+
+Vec3Df speculair(const Vec3Df lightDirection, const Vec3Df viewDirection, int triangleIndex){
+  Vec3Df lightN = lightDirection / lightDirection.getLength();
+  Vec3Df N = getNormal(MyMesh.triangles.at(triangleIndex));
+  Vec3Df normalN = N / N.getLength();
+  
+  Vec3Df reflection = reflectionVector(lightN, normalN);
+	Vec3Df color = Vec3Df(0, 0, 0);
+	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
+	color = MyMesh.materials.at(triMat).Ks();
+	Vec3Df spec = color * pow(std::fmax(Vec3Df::dotProduct(reflection, viewDirection), 0.0), 16);
+	return spec;
+
 }
 
 
@@ -408,34 +432,38 @@ void yourDebugDraw()
 // 'c' Adds the option to clear the debugvectors
 
 void yourKeyboardFunc(char t, int x, int y, const Vec3Df & rayOrigin, const Vec3Df & rayDestination){
-    
-    //here, as an example, I use the ray to fill in the values for my upper global ray variable
-    //I use these variables in the debugDraw function to draw the corresponding ray.
-    //try it: Press a key, move the camera, see the ray that was launched as a line.
-    
-    switch (t) {
-        case 'd':
-            toggleDebug();
-            break;
-        case 'c':
-            clearDebugVector();
-            break;
-        case 't':
-            toggleFillColor();
-            break;
-        default:
-            if(debug){
-                performRayTracing(rayOrigin, rayDestination);
-                // std::cout << " The color from the ray is: ";
-                printVector(testColor);
-                // std::cout << std::endl;
-                // std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
-            }
-            break;
-    }
-    
-    printLine("We are done!");
-    
+
+	//here, as an example, I use the ray to fill in the values for my upper global ray variable
+	//I use these variables in the debugDraw function to draw the corresponding ray.
+	//try it: Press a key, move the camera, see the ray that was launched as a line.
+	
+  switch (t) {
+    case 'd':
+      toggleDebug();
+      break;
+    case 'c':
+      clearDebugVector();
+      break;
+    case 't':
+      toggleFillColor();
+      break;
+      
+    // case any number
+      // Set light intensity of last light source
+    default:
+      if(debug){
+        performRayTracing(rayOrigin, rayDestination);
+        // std::cout << " The color from the ray is: ";
+        //printVector(testColor);
+        // std::cout << std::endl;
+        // std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
+      }
+      break;
+  }
+  
+  printLine("We are done!");
+
+
 }
 
 
