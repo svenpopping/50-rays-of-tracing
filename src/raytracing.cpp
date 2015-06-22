@@ -20,8 +20,8 @@ Vec3Dd testRayOrigin;
 Vec3Dd testRayDestination;
 Vec3Dd testColor;
 
-int MAX_LEVEL = 10;
-int EPSILON = 0.0001;
+int MAX_LEVEL = 15;
+int EPSILON = 0.001;
 
 std::vector<Vec3Dd> rayOrigins;
 std::vector<Vec3Dd> rayIntersections;
