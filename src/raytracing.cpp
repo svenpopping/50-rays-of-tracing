@@ -20,7 +20,7 @@ Vec3Dd testRayOrigin;
 Vec3Dd testRayDestination;
 Vec3Dd testColor;
 
-int MAX_LEVEL = 5;
+int MAX_LEVEL = 10;
 int EPSILON = 0.0001;
 
 std::vector<Vec3Dd> rayOrigins;
@@ -118,7 +118,7 @@ bool inShadow(const Vec3Dd point, int j, const Vec3Dd lightSource) {
     for (int i = 0; i < MyMesh.triangles.size(); i++) {
         Triangle triangle = MyMesh.triangles.at(i);
         Vec3Dd dir = lightVector(point, lightSource);
-        Vec3Dd offsetPoint = point + dir * 0.01;
+        Vec3Dd offsetPoint = point + dir * 0.1;
         Vec3Dd intersection = rayTriangleIntersect(offsetPoint, dir, triangle, depth);
         if (!isNulVector(intersection) && i != j) {
             interrupt = true;
