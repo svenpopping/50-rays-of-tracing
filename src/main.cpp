@@ -64,6 +64,11 @@ void reshape(int w, int h);
 void keyboard(unsigned char key, int x, int y);
 void startRaytracing();
 void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, int id, unsigned minY, unsigned maxY);
+void calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11,
+	Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4, double x, double y, double space);
+Vec3Dd calculateRay(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, double x_offset, double y_offset,
+	double x, double y);
+bool compareColor(Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4);
 
 /**
  * Main Programme
@@ -255,9 +260,10 @@ void startRaytracing() {
 
   char filename[64];
 #if defined(_MSC_VER)
-  _snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
+  _snprintf(filename, sizeof(filename), "result-%d.ppm", time(NULL));
 #else    
-  snprintf(filename, sizeof(filename), "result-%d.bmp", time(NULL));
+  snprintf(filename, sizeof(filename), "result-%d.ppm
+	  ", time(NULL));
 #endif
   result.writeImage(filename);
 }
@@ -274,24 +280,76 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
 
     for (unsigned int x=0; x<WindowSize_X;++x) {
       Vec3Dd rgb = nullVector();
-      for(unsigned int z = 0; z < 9;z++){
-      //produce the rays for each pixel, by interpolating
+          //produce the rays for each pixel, by interpolating
       //the four rays of the frustum corners.
-       double x_offset = (z % 3 == 0) ? -0.5 : (z % 3 == 1) ? 0 : 0.5;
-       double y_offset = (z < 3) ? -0.5 : (z < 6) ? 0 : 0.5;
-      double xscale=1.0f-float(x)/(WindowSize_X-(1 + x_offset));
-      double yscale=1.0f-float(y)/(WindowSize_Y-(1 + y_offset));
+		// adaptive sampling
+		// calculate the corners, compare. If different - calculate again.
+		  Vec3Dd color1 = nullVector();
+		  Vec3Dd color2 = nullVector();
+		  Vec3Dd color3 = nullVector();
+		  Vec3Dd color4 = nullVector();
+		  double start_space = 1;
+		  //launch raytracing for the corners.
+		  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, x, y, start_space);
 
-      origin=yscale*(xscale*origin00+(1-xscale)*origin10)+
-        (1-yscale)*(xscale*origin01+(1-xscale)*origin11);
-      dest=yscale*(xscale*dest00+(1-xscale)*dest10)+
-        (1-yscale)*(xscale*dest01+(1-xscale)*dest11);
+		  // corner colors are equal
+		  if (compareColor(color1, color2, color3, color4)) {
+			  // doesn't matter what color we take since they are equal.
+			  rgb = color1;
+		  }
+		  else {
 
-      //launch raytracing for the given ray.
-      rgb = rgb + performRayTracing(origin, dest)/9;
-      }
+		  }
+
+      
+      //rgb = rgb + performRayTracing(origin, dest)/9;
+      
       //store the result in an image
       result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
     }
   }
 }
+
+
+void calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, 
+	Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4, double x, double y,double space ) {
+	
+	color1 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x - space, y - space, x, y);
+	color2 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x - space, y + space, x, y);
+	color3 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x + space, y - space, x, y);
+	color4 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x + space, y + space, x, y);
+
+	/*
+	Calculate for x - space & y - space
+	x - space & y + space
+	x + space & y - space
+	x + space & y + space
+
+	*/
+}
+
+Vec3Dd calculateRay(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, double x_offset, double y_offset,
+	double x, double y) {
+	Vec3Dd origin, dest;
+
+	double xscale = 1.0f - float(x) / (WindowSize_X - (1 + x_offset));
+	double yscale = 1.0f - float(y) / (WindowSize_Y - (1 + y_offset));
+
+	origin = yscale*(xscale*origin00 + (1 - xscale)*origin10) +
+		(1 - yscale)*(xscale*origin01 + (1 - xscale)*origin11);
+	dest = yscale*(xscale*dest00 + (1 - xscale)*dest10) +
+		(1 - yscale)*(xscale*dest01 + (1 - xscale)*dest11);
+	
+	return performRayTracing(origin, dest);
+}
+
+bool compareColor(Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4) {
+	bool equal = false;
+	if (color1 == color2 && color2 == color3 && color3 == color4 && color4 == color1) {
+		equal = true;
+	}
+	return equal;
+}
+
+
+
