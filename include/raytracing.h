@@ -41,6 +41,7 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
 void clearDebugVector();
 void toggleDebug();
 void toggleFillColor();
+void toggleBackgroundColor();
 
 //Shadow Functions
 double ShadowPercentage(const Vec3Dd point, int j);
