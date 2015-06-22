@@ -49,14 +49,14 @@ bool inShadow(const Vec3Dd point, int index, const Vec3Dd source);
 // Shading functions
 Vec3Dd shade(const Vec3Dd origin, const Vec3Dd intersection, int level, int triangleIndex, Vec3Dd normal);
 Vec3Dd diffuse(const Vec3Dd light, Vec3Dd normal,  int triangleIndex);
-Vec3Dd ambient(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex);
+Vec3Dd ambient(int triangleIndex);
 Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirectionN, int triangleIndex);
 Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint);
 
 
 // Reflection functions
 Vec3Dd reflectionVector(const Vec3Dd viewDirection, const Vec3Dd normalVector);
-Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersection, const Vec3Dd normalVector, int level, Material mat);
+Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersection, const Vec3Dd normalVector, int level);
 
 // Refraction functions
 Vec3Dd computeRefraction(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex);

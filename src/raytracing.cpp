@@ -83,7 +83,7 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     }
 
     if(intersectionFound){
-      double ShadowScalar = 1.f - ShadowPercentage(intersection, index);
+      double ShadowScalar = 1.0 - ShadowPercentage(intersection, index);
       color = shade(dir, intersection, level, index, getNormal(MyMesh.triangles.at(index)));
       color = color*ShadowScalar;
       if(debug){
@@ -117,7 +117,9 @@ bool inShadow(const Vec3Dd point, int j, const Vec3Dd lightSource) {
     bool interrupt  = false;
     for (int i = 0; i < MyMesh.triangles.size(); i++) {
         Triangle triangle = MyMesh.triangles.at(i);
-        Vec3Dd intersection = rayTriangleIntersect(point, lightSource, triangle, depth);
+        Vec3Dd dir = lightVector(point, lightSource);
+        Vec3Dd offsetPoint = point + dir * 0.01;
+        Vec3Dd intersection = rayTriangleIntersect(offsetPoint, dir, triangle, depth);
         if (!isNulVector(intersection) && i != j) {
             interrupt = true;
         }
@@ -130,7 +132,7 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
 
 	Vec3Dd totalColor = Vec3Dd(0, 0, 0);
   //ambient is only counted once
-  totalColor += ambient(dir, intersection, level, triangleIndex);
+  totalColor += ambient(triangleIndex);
 
   // loop for all lightpositions
   for(int i = 0; i < MyLightPositions.size(); ++i) {
@@ -150,13 +152,13 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
       std::cout   << mat.name() << std::endl;
 
     
-    if (level < MAX_LEVEL) {
+    if (true) {
       level++;
       if (mat.name().find(REFLECTION_NAME) != std::string::npos) { // Reflection
         if(debug)
           std::cout << "Reflecting..." << mat.name() << std::endl;
         
-        color = color * (1 - mat.Tr()) + computeReflectionVector(viewDirection, intersection, N.getNormalized(), level, mat) * (mat.Tr());
+        color = color * (1 - mat.Tr()) + computeReflectionVector(viewDirection, intersection, N.getNormalized(), level) * (mat.Tr());
       }
       if (mat.name().find(REFRACTION_NAME) != std::string::npos) { // Refraction
         if(debug)
@@ -242,7 +244,7 @@ Vec3Dd diffuse(const Vec3Dd lightSource, Vec3Dd normal,  int triangleIndex){
     return 1 * color;
 }
 
-Vec3Dd ambient(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex){
+Vec3Dd ambient(int triangleIndex){
     unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
     Vec3Dd ka = MyMesh.materials.at(triMat).Ka();
     // where Ka is surface property, Ia is light property
@@ -279,7 +281,7 @@ Vec3Dd reflectionVector(const Vec3Dd lightDirection, const Vec3Dd normalVector) 
 // We can also add textures!
 
 
-Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersection, const Vec3Dd normalVector, int level, Material mat) {
+Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersection, const Vec3Dd normalVector, int level) {
     //    Vec3Dd reflection = (2 * Vec3Dd::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
     Vec3Dd reflection = viewDirection - 2 * Vec3Dd::dotProduct(normalVector, viewDirection) * normalVector;
     // Vec3Dd reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
