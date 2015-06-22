@@ -16,9 +16,9 @@
 //these are only used to illustrate
 //a simple debug drawing. A ray
 
-Vec3Dd testRayOrigin;
-Vec3Dd testRayDestination;
+
 Vec3Dd testColor;
+Vec3Dd backgroundColor = nullVector();
 
 int MAX_LEVEL = 5;
 int EPSILON = 0.0001;
@@ -400,6 +400,7 @@ void yourDebugDraw()
     glVertex3dv(MyLightPositions[0].pointer());
     glEnd();
     glPopAttrib();
+  
     
     //draw whatever else you want...
     ////glutSolidSphere(1,10,10);
@@ -431,6 +432,7 @@ void yourDebugDraw()
 // 'd' Toggles the debug mode
 // 't' Toggles the debug view
 // 'c' Adds the option to clear the debugvectors
+// 'b' changes the background color
 
 void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination){
 
@@ -447,6 +449,9 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
       break;
     case 't':
       toggleFillColor();
+      break;
+    case 'b':
+      toggleBackgroundColor();
       break;
       
     // case any number
@@ -487,6 +492,16 @@ void toggleFillColor(){
     else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+}
+
+void toggleBackgroundColor(){
+  glClear(GL_COLOR_BUFFER_BIT);
+  glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], 1);
+  
+  backgroundColor = backgroundColor + Vec3Dd(0.2,0.2,0.2);
+  if(backgroundColor[0] > 1){
+    backgroundColor = nullVector();
+  }
 }
 
 
