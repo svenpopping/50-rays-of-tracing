@@ -273,10 +273,14 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
     }
 
     for (unsigned int x=0; x<WindowSize_X;++x) {
-      //produce the rays for each pixel, by interpolating 
+      Vec3Dd rgb = nullVector();
+      for(unsigned int z = 0; z < 9;z++){
+      //produce the rays for each pixel, by interpolating
       //the four rays of the frustum corners.
-      double xscale=1.0f-float(x)/(WindowSize_X-1);
-      double yscale=1.0f-float(y)/(WindowSize_Y-1);
+       double x_offset = (z % 3 == 0) ? -0.5 : (z % 3 == 1) ? 0 : 0.5;
+       double y_offset = (z < 3) ? -0.5 : (z < 6) ? 0 : 0.5;
+      double xscale=1.0f-float(x)/(WindowSize_X-(1 + x_offset));
+      double yscale=1.0f-float(y)/(WindowSize_Y-(1 + y_offset));
 
       origin=yscale*(xscale*origin00+(1-xscale)*origin10)+
         (1-yscale)*(xscale*origin01+(1-xscale)*origin11);
@@ -284,8 +288,9 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
         (1-yscale)*(xscale*dest01+(1-xscale)*dest11);
 
       //launch raytracing for the given ray.
-      Vec3Dd rgb = performRayTracing(origin, dest);
-      //store the result in an image 
+      rgb = rgb + performRayTracing(origin, dest)/9;
+      }
+      //store the result in an image
       result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
     }
   }
