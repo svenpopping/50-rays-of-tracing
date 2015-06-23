@@ -1,6 +1,7 @@
 #pragma  once
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <queue>
 
 template <typename T> class synchronized_queue
