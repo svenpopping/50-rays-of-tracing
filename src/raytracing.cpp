@@ -251,15 +251,25 @@ Vec3Dd ambient(int triangleIndex){
 
 
 Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int triangleIndex, const Vec3Dd N){
-  Vec3Dd lightN = lightDirection / lightDirection.getLength();
   
-  Vec3Dd reflection = reflectionVector(lightN, N);
-	Vec3Dd color = Vec3Dd(0, 0, 0);
+ // Vec3Dd reflection = reflectionVector(lightDirection, N);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-	color = MyMesh.materials.at(triMat).Ks();
-	Vec3Dd spec = color * pow(std::fmax(Vec3Dd::dotProduct(reflection, viewDirection), 0.0), 16);
-	return spec;
+	Vec3Dd color = MyMesh.materials.at(triMat).Ks();
 
+	/*Vec3Dd spec = color * pow(std::fmax(Vec3Dd::dotProduct(reflection, viewDirection), 0.0), 16);
+	return spec;*/
+	double specularTerm = 0;
+
+	// calculate specular reflection only if
+	// the surface is oriented to the light source
+	if (Vec3Dd::dotProduct(N, lightDirection) > 0)
+	{
+		// half vector
+		int shinyness = 4;
+		Vec3Dd H = (lightDirection + viewDirection).getNormalized();
+		specularTerm = pow(Vec3Dd::dotProduct(N, H), shinyness);
+	}
+		return color * specularTerm;
 }
 
 
