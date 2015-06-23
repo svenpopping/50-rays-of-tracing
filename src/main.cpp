@@ -42,9 +42,10 @@ unsigned int WindowSize_Y = 800;  // resolution Y
 // Worker threads.
 unsigned threads;
 
-// helper variables.
-double EPSILON = 0.05;
-double MAX_SAMPLES = 2; // this are 5 steps ( 4^5).
+// helper variables for adaptive Anti-Aliasing.
+// SET EPSILON TO 0.001 FOR FINAL RENDER!
+#define EPSILON  0.05
+#define MAX_SAMPLES  5 
 
 
 /**
@@ -302,37 +303,9 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
       double perc = (float)(y - minY) / (float)(maxY - minY);
       std::cout << "[thread #" << id << "] " << 100 * perc << "%" << std::endl;
     }
-	//for (unsigned int x = 0; x<WindowSize_X;++x) {
-	//	Vec3Dd rgb = nullVector();
-	//	for (unsigned int z = 0; z < 9;z++) {
-	//		//produce the rays for each pixel, by interpolating
-	//		//the four rays of the frustum corners.
-	//		double x_offset = (z % 3 == 0) ? -0.5 : (z % 3 == 1) ? 0 : 0.5;
-	//		double y_offset = (z < 3) ? -0.5 : (z < 6) ? 0 : 0.5;
-	//		double xscale = 1.0f - float(x) / (WindowSize_X - (1 + x_offset));
-	//		double yscale = 1.0f - float(y) / (WindowSize_Y - (1 + y_offset));
-
-	//		origin = yscale*(xscale*origin00 + (1 - xscale)*origin10) +
-	//			(1 - yscale)*(xscale*origin01 + (1 - xscale)*origin11);
-	//		dest = yscale*(xscale*dest00 + (1 - xscale)*dest10) +
-	//			(1 - yscale)*(xscale*dest01 + (1 - xscale)*dest11);
-
-	//		//launch raytracing for the given ray.
-	//		rgb = rgb + performRayTracing(origin, dest) / 9;
-	//	}
-	//	//store the result in an image
-	//	result.setPixel(x, y, RGBValue(rgb[0], rgb[1], rgb[2]));
-	//}
-
-
-
-
     for (unsigned int x=0; x<WindowSize_X;++x) {
 		Vec3Dd rgb = nullVector();
           //produce the rays for each pixel, by interpolating
-		//the four rays of the frustum corners.
-		// adaptive sampling
-		// calculate the corners, compare. If different - calculate again.
 		  Vec3Dd color1 = nullVector();
 		  Vec3Dd color2 = nullVector();
 		  Vec3Dd color3 = nullVector();
@@ -341,10 +314,7 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
 		  double samples = 0;
 		  //launch raytracing for the corners.
 		  rgb = calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x, y, start_space,samples);
-		  
-      
-      //rgb = rgb + performRayTracing(origin, dest)/9;
-      
+		      
       //store the result in an image
       result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
     }
@@ -352,7 +322,9 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
   }
 }
 
-
+/*
+Calculate the four corners of a pixel. When they are not equal, repeat the process with adapative supersampling.
+*/
 Vec3Dd calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, 
 	double x, double y,double space,double amountofsamples ) {
 	Vec3Dd newcolor = nullVector();
@@ -371,26 +343,26 @@ Vec3Dd calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3
 	
 	// corner colors are equal
 	if ( amountofsamples > MAX_SAMPLES || compareColor(color1, color2, color3, color4)) {
-		// doesn't matter what color we take since they are equal.
+		// get the average of these colors.
 		newcolor = ((color1 + color2 + color3 + color4) / 4);
 	}
 	else {
-		//rgb = rgb + ((color1 + color2 + color3 + color4) / amountofsamples);
-		color1 = nullVector();
-		color2 = nullVector();
-		color3 = nullVector();
-		color4 = nullVector();
+		// divide the space since we are searching in a smaller square of the pixel now.
 		double newspace = space / 2;
 		amountofsamples = amountofsamples + 1;
 
+		// the color of the pixel is equal to the average of four smaller squares in the pixel.
 		newcolor = 0.25 * calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11,  (x - newspace), (y - newspace),newspace,amountofsamples );
-		newcolor = newcolor + (0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, (x + newspace), (y - newspace), newspace, amountofsamples));
+		newcolor = newcolor + 0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, (x + newspace), (y - newspace), newspace, amountofsamples);
 		newcolor = newcolor + 0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, (x - newspace), (y + newspace), newspace, amountofsamples);
 		newcolor = newcolor + 0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, (x + newspace), (y + newspace), newspace, amountofsamples);
 	}
 	return newcolor;
 }
 
+/**
+Cast a ray with a x offset and y offset from the points (x,y) and get his color.
+*/
 Vec3Dd calculateRay(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, double x_offset, double y_offset,
 	double x, double y) {
 	Vec3Dd origin, dest;
@@ -406,6 +378,9 @@ Vec3Dd calculateRay(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &
 	return performRayTracing(origin, dest);
 }
 
+/**
+Compare 4 Vec3D with each other, only return true if they are all the same.
+*/
 bool compareColor(Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4) {
 	bool equal = false;
 	if ( compareWithEpsilon(color1,color2) && compareWithEpsilon(color2, color3) && compareWithEpsilon(color3, color4) && compareWithEpsilon(color4,color1) && compareWithEpsilon(color1,color3) && compareWithEpsilon(color2,color4) ){
@@ -414,9 +389,12 @@ bool compareColor(Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4) {
 	return equal;
 }
 
+/*
+ Compare the value of two Vec3D with a Epsilon factor.
+*/
 bool compareWithEpsilon(Vec3Dd vec1, Vec3Dd vec2) {
 	bool equal = false;
-	if (abs(vec1[0] - vec2[0]) < EPSILON && abs(vec1[1] - vec2[1]) < EPSILON && abs(vec1[2] - vec2[2]) < EPSILON) {
+	if ( abs(vec1[0] - vec2[0]) < EPSILON && abs(vec1[1] - vec2[1]) < EPSILON && abs(vec1[2] - vec2[2]) < EPSILON) {
 		equal = true;
 	}
 	return equal;
