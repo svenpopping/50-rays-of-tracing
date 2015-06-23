@@ -72,6 +72,27 @@ int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
 
+    for (; *argv; argv++)
+        if (!strcmp(*argv, "-p")) {
+            double x, y, z;
+            sscanf(*++argv, "%lf,%lf,%lf", &x, &y, &z);
+            Vec3Dd pos(x, y, z);
+            std::cout << "Command-line camera position: " << pos << std::endl;
+            MyCameraPosition = pos;
+        } else if (!strcmp(*argv, "-l")) {
+            double x, y, z;
+            char *p = *++argv;
+            do {
+                char *e = strchr(p, ':');
+                if (e) *e++ = 0;
+                sscanf(p, "%lf,%lf,%lf", &x, &y, &z); 
+                Vec3Dd pos(x, y, z);
+                std::cout << "Command-line light source: " << pos << std::endl;
+                MyLightPositions.push_back(pos);
+                p = e;
+            } while (p);
+        }
+
     //framebuffer setup
     glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH );
 
