@@ -43,6 +43,7 @@ class Material
             Tr_is_set_=m.Tr_is_set_; // transparency (use this value to trade off reflection/refraction
             illum_ = m.illum_;		
             name_=m.name_;
+          textureName_ = m.textureName_;
             return (*this);
         };
 

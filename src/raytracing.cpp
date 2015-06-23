@@ -21,6 +21,10 @@
 Vec3Dd testColor;
 Vec3Dd backgroundColor = nullVector();
 
+unsigned char* textureData;
+int textureWidth;
+int textureHeight;
+
 std::vector<Vec3Dd> rayOrigins;
 std::vector<Vec3Dd> rayIntersections;
 std::vector<Vec3Dd> rayColors;
@@ -37,53 +41,48 @@ void init()
     //PLEASE ADAPT THE LINE BELOW TO THE FULL PATH OF THE dodgeColorTest.obj
     //model, e.g., "C:/temp/myData/GraphicsIsFun/dodgeColorTest.obj",
     //otherwise the application will not load properly
-    
-    
+  
     MyMesh.loadMesh(FILE_LOCATION, true);
     MyMesh.computeVertexNormals();
     
     //one first move: initialize the first light source
     //at least ONE light source has to be in the scene!!!
     //here, we set it to the current location of the camera
-    MyLightPositions.push_back(MyCameraPosition);
+  MyLightPositions.push_back(MyCameraPosition);
+  
+  
+  read_bmp_file(MyMesh.materials.at(1).textureName().c_str());
 }
 
 //return the color of your pixel.
 Vec3Dd performRayTracing(const Vec3Dd & origin, const Vec3Dd & dest)
 {
-    return trace(origin, dest, 0);
+  return trace(origin, dest, 0);
 }
 
 Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     double depth = DBL_MAX;
     Vec3Dd color = nullVector();
-    int index;
+    int index = -1;
     Vec3Dd intersection = dir;
     bool intersectionFound = false;
 
     Triangle triangle;
-
-
-
     for (unsigned i = 0; i < MyMesh.triangles.size(); i++){
       triangle = MyMesh.triangles.at(i);
       
       Vec3Dd testIntersection = rayTriangleIntersect(origin, dir, triangle, depth);
       if (!isNulVector(testIntersection) && !(testIntersection == origin)){
-
         intersectionFound = true;
         intersection = testIntersection;
         index = i;
-        
       }
-      
     }
 
-    if(intersectionFound){
+    if (intersectionFound){
       double ShadowScalar = 1.0 - ShadowPercentage(intersection, index);
       color = shade(dir, intersection, level, index, getNormalAtIntersection(intersection, MyMesh.triangles.at(index)));
       color = color*ShadowScalar;
-      
     }
   
   if(debug){
@@ -119,6 +118,7 @@ bool inShadow(const Vec3Dd point, unsigned j, const Vec3Dd lightSource) {
     bool interrupt  = false;
     for (unsigned i = 0; i < MyMesh.triangles.size(); i++) {
         Triangle triangle = MyMesh.triangles.at(i);
+      
         Vec3Dd dir = lightVector(point, lightSource);
         Vec3Dd offsetPoint = point + dir * 0.1;
         Vec3Dd intersection = rayTriangleIntersect(offsetPoint, dir, triangle, depth);
@@ -133,12 +133,17 @@ bool inShadow(const Vec3Dd point, unsigned j, const Vec3Dd lightSource) {
 Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex, const Vec3Dd N){
 
 	Vec3Dd totalColor = Vec3Dd(0, 0, 0);
-  //ambient is only counted once
-  totalColor += ambient(triangleIndex);
   
   unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
   Material mat = MyMesh.materials.at(triMat);
-
+  
+  if (!(mat.textureName().empty())) {
+    totalColor += getTextureColor(mat.textureName(), MyMesh.triangles.at(triangleIndex));
+  } else {
+    //ambient is only counted once
+    totalColor += ambient(triangleIndex);
+  }
+      
   Vec3Dd viewDirection = MyCameraPosition - intersection;
   
   // loop for all lightpositions
@@ -165,6 +170,7 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
     if (mat.name().find(REFRACTION_NAME) != std::string::npos) { // Refraction
       if(debug)
         std::cout << "Refracting..." << std::endl;
+      
       totalColor = totalColor * mat.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - mat.Tr());
     }
   }
@@ -285,6 +291,49 @@ Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersec
     return trace(intersection +reflection.getNormalized()*0.01, reflection.getNormalized(), level);
 }
 // We can also add textures!
+
+Vec3Dd getTextureColor(const std::string textureName, const Triangle triangle) {
+  Vec3Dd ding = Vec3Dd(textureData[(triangle.t[0] * 3 * textureWidth + 3 * triangle.t[1])]/255.0,
+                         textureData[(triangle.t[0] * 3 * textureWidth + 3*triangle.t[1]+1)]/255.0,
+                       textureData[(triangle.t[0] * 3 * textureWidth + 3*triangle.t[1]+2)]/255.0);
+  
+  return ding;
+}
+
+void read_bmp_file(const char* filename)
+{
+  int i;
+  FILE* f = fopen(filename, "rb");
+  unsigned char info[54];
+  fread(info, sizeof(unsigned char), 54, f); // read the 54-byte header
+  
+  // extract image height and width from header
+  textureWidth = *(int*)&info[18];
+  textureHeight = *(int*)&info[22];
+  
+  int size = 3 * textureWidth * textureHeight;
+  textureData = new unsigned char[size]; // allocate 3 bytes per pixel
+  fread(textureData, sizeof(unsigned char), size, f); // read the rest of the data at once
+  fclose(f);
+  
+  for(i = 0; i < size; i += 3)
+  {
+    std::cout << "i: " << i << " = " << textureData[i] << std::endl;
+    
+    unsigned char tmp = textureData[i];
+    textureData[i] = textureData[i+2];
+    textureData[i+2] = tmp;
+  }
+  /*Now data should contain the (R, G, B) values of the pixels. The color of pixel (i, j) is stored at
+   data[j * 3* width + 3 * i], data[j * 3 * width + 3 * i + 1] and data[j * 3 * width + 3*i + 2].
+   
+   In the last part, the swap between every first and third pixel is done because windows stores the
+   color values as (B, G, R) triples, not (R, G, B).*/
+  
+  
+  std::cout << "TextureData: " << textureData[42] << std::endl;
+}
+
 
 // The source of this function is:
 // http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution

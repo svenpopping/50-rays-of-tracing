@@ -141,8 +141,7 @@ int main(int argc, char** argv)
     glutMouseFunc(tbMouseFunc);    // trackball
     glutMotionFunc(tbMotionFunc);  // uses mouse
     glutIdleFunc( animate);
-
-
+  
     // thread setup.
     threads = getThreadCount();
     printf("Detected %u threads.\n", threads);

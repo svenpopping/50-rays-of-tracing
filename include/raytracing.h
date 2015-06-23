@@ -61,3 +61,7 @@ Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersec
 
 // Refraction functions
 Vec3Dd computeRefraction(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex);
+
+// Textures
+Vec3Dd getTextureColor(const std::string textureName, const Triangle triangle);
+void read_bmp_file(const char* filename);

@@ -1,0 +1,14 @@
+# Blender MTL File: 'box_simple.blend'
+# Material Count: 1
+
+newmtl Material
+Ns 194.117647
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Bump /Users/svenpopping/Dump/50_rays_of_tracing/50_rays_of_tracing/models/box_simple.bmp
+map_Kd /Users/svenpopping/Dump/50_rays_of_tracing/50_rays_of_tracing/models/box_simple.bmp
+map_Ns /Users/svenpopping/Dump/50_rays_of_tracing/50_rays_of_tracing/models/box_simple.bmp
