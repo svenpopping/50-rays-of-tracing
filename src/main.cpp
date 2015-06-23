@@ -18,12 +18,14 @@
 #include <thread>
 #include <utility>
 #include <functional>
+#include <tuple>
+#include <mutex>
 #include "raytracing.h"
 #include "mesh.h"
 #include "traqueboule.h"
 #include "imageWriter.h"
 #include "helper.h"
-
+#include "squeue.h"
 
 Vec3Dd MyCameraPosition;
 
@@ -39,13 +41,16 @@ Mesh MyMesh;
 unsigned int WindowSize_X = 800;  // resolution X
 unsigned int WindowSize_Y = 800;  // resolution Y
 
-// Worker threads.
-unsigned threads;
 
 // helper variables for adaptive Anti-Aliasing.
 // SET EPSILON TO 0.001 FOR FINAL RENDER!
 #define EPSILON  0.05
 #define MAX_SAMPLES  5 
+
+// Worker threads.
+unsigned threads, wthreads = 0;
+std::mutex wmutex;
+synchronized_queue<std::tuple<unsigned, unsigned>> wqueue;
 
 
 /**
@@ -296,16 +301,27 @@ void startRaytracing() {
 
 void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, int id, unsigned minY, unsigned maxY) {
   Vec3Dd origin, dest;
-  for (unsigned int y=minY; y<maxY;++y)
-  {
+  while (true) {
+    for (unsigned int y = minY; y < maxY; y++) {
+      unsigned divider = (maxY - minY < 20) ? 5 : 20;
+      if ((y - minY) % ((maxY - minY) / divider) == 0) {
+        double perc = (float)(y - minY) / (float)(maxY - minY);
+        std::cout << "[thread #" << id << "] " << 100 * perc << "%" << std::endl;
 
-    if ((y - minY) % ((maxY - minY) / 20) == 0) {
-      double perc = (float)(y - minY) / (float)(maxY - minY);
-      std::cout << "[thread #" << id << "] " << 100 * perc << "%" << std::endl;
-    }
-    for (unsigned int x=0; x<WindowSize_X;++x) {
-		Vec3Dd rgb = nullVector();
-          //produce the rays for each pixel, by interpolating
+        wmutex.lock();
+        if (wthreads && maxY - y >= 25) {
+          unsigned diff = (maxY - y) / 2;
+          maxY -= diff;
+          wqueue.push(std::tuple<unsigned, unsigned>(maxY, maxY + diff));
+
+          std::cout << "[thread #" << id << "] Rebalanced " << diff << " lines to waiting thread." << std::endl;
+        }
+        wmutex.unlock();
+      }
+
+	  for (unsigned int x = 0; x<WindowSize_X;++x) {
+		  Vec3Dd rgb = nullVector();
+		  //produce the rays for each pixel, by interpolating
 		  Vec3Dd color1 = nullVector();
 		  Vec3Dd color2 = nullVector();
 		  Vec3Dd color3 = nullVector();
@@ -313,12 +329,42 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
 		  double start_space = 0.5;
 		  double samples = 0;
 		  //launch raytracing for the corners.
-		  rgb = calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x, y, start_space,samples);
-		      
-      //store the result in an image
-      result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
+		  rgb = calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x, y, start_space, samples);
+
+		  //store the result in an image
+		  result.setPixel(x, y, RGBValue(rgb[0], rgb[1], rgb[2]));
+	  }
     }
-	
+
+    // Wait for new assignments.
+    std::cout << "[thread #" << id << "] Waiting... [" << wthreads + 1 << "]" << std::endl;
+    wmutex.lock();
+    wthreads++;
+    wmutex.unlock();
+
+    if (wthreads == threads) {
+      std::cout << "[thread #" << id << "] Done!" << std::endl;
+      for (unsigned n = 0; n < threads - 1; n++)
+        wqueue.push(std::tuple<unsigned, unsigned>(0, 0));
+      break;
+    }
+
+
+    std::tuple<unsigned, unsigned> t = wqueue.front();
+    wqueue.pop();
+
+    wmutex.lock();
+    wthreads--;
+    wmutex.unlock();
+
+    // Got new assignment, let's go.
+    minY = std::get<0>(t);
+    maxY = std::get<1>(t);
+    if (minY == 0 && maxY == 0)
+      break;
+
+    std::cout << "[thread #" << id << "] Got new work: " << minY << " - " << maxY << std::endl;
+
   }
 }
 
