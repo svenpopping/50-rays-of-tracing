@@ -118,6 +118,10 @@ bool inShadow(const Vec3Dd point, unsigned j, const Vec3Dd lightSource) {
     double depth = DBL_MAX;
     bool interrupt  = false;
     for (unsigned i = 0; i < MyMesh.triangles.size(); i++) {
+      unsigned int triMat = MyMesh.triangleMaterials.at(i);
+      Material mat = MyMesh.materials.at(triMat);
+      if (!(mat.name().find(REFRACTION_NAME) != std::string::npos)) { // Refraction
+
         Triangle triangle = MyMesh.triangles.at(i);
         Vec3Dd dir = lightVector(point, lightSource);
         Vec3Dd offsetPoint = point + dir * 0.1;
@@ -125,10 +129,10 @@ bool inShadow(const Vec3Dd point, unsigned j, const Vec3Dd lightSource) {
         if (!isNulVector(intersection) && i != j) {
             interrupt = true;
         }
+      }
     }
     return interrupt;
 }
-
 
 Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex, const Vec3Dd N){
 
