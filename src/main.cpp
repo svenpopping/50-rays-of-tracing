@@ -83,7 +83,8 @@ int main(int argc, char** argv)
     //initialize viewpoint
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glTranslatef(0,0,-4);
+    glTranslatef(0,-0.5,-3);
+    //glTranslatef(0,0,-4);
     tbInitTransform();     // This is for the trackball, please ignore
     tbHelp();             // idem
     MyCameraPosition=getCameraPosition();
