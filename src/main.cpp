@@ -18,12 +18,14 @@
 #include <thread>
 #include <utility>
 #include <functional>
+#include <tuple>
+#include <mutex>
 #include "raytracing.h"
 #include "mesh.h"
 #include "traqueboule.h"
 #include "imageWriter.h"
 #include "helper.h"
-
+#include "squeue.h"
 
 Vec3Dd MyCameraPosition;
 
@@ -40,8 +42,9 @@ unsigned int WindowSize_X = 800;  // resolution X
 unsigned int WindowSize_Y = 800;  // resolution Y
 
 // Worker threads.
-unsigned threads;
-
+unsigned threads, wthreads = 0;
+std::mutex wmutex;
+synchronized_queue<std::tuple<unsigned, unsigned>> wqueue;
 
 /**
  * Main function, which is drawing an image (frame) on the screen
@@ -285,34 +288,74 @@ void startRaytracing() {
 
 void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, int id, unsigned minY, unsigned maxY) {
   Vec3Dd origin, dest;
-  for (unsigned int y=minY; y<maxY;++y)
-  {
 
-    if ((y - minY) % ((maxY - minY) / 20) == 0) {
-      double perc = (float)(y - minY) / (float)(maxY - minY);
-      std::cout << "[thread #" << id << "] " << 100 * perc << "%" << std::endl;
-    }
+  while (true) {
+    for (unsigned int y = minY; y < maxY; y++) {
+      unsigned divider = (maxY - minY < 20) ? 5 : 20;
+      if ((y - minY) % ((maxY - minY) / divider) == 0) {
+        double perc = (float)(y - minY) / (float)(maxY - minY);
+        std::cout << "[thread #" << id << "] " << 100 * perc << "%" << std::endl;
 
-    for (unsigned int x=0; x<WindowSize_X;++x) {
-      Vec3Dd rgb = nullVector();
-      for(unsigned int z = 0; z < 9;z++){
-      //produce the rays for each pixel, by interpolating
-      //the four rays of the frustum corners.
-       double x_offset = (z % 3 == 0) ? -0.5 : (z % 3 == 1) ? 0 : 0.5;
-       double y_offset = (z < 3) ? -0.5 : (z < 6) ? 0 : 0.5;
-      double xscale=1.0f-float(x)/(WindowSize_X-(1 + x_offset));
-      double yscale=1.0f-float(y)/(WindowSize_Y-(1 + y_offset));
+        wmutex.lock();
+        if (wthreads && maxY - y >= 25) {
+          unsigned diff = (maxY - y) / 2;
+          maxY -= diff;
+          wqueue.push(std::tuple<unsigned, unsigned>(maxY, maxY + diff));
 
-      origin=yscale*(xscale*origin00+(1-xscale)*origin10)+
-        (1-yscale)*(xscale*origin01+(1-xscale)*origin11);
-      dest=yscale*(xscale*dest00+(1-xscale)*dest10)+
-        (1-yscale)*(xscale*dest01+(1-xscale)*dest11);
-
-      //launch raytracing for the given ray.
-      rgb = rgb + performRayTracing(origin, dest)/9;
+          std::cout << "[thread #" << id << "] Rebalanced " << diff << " lines to waiting thread." << std::endl;
+        }
+        wmutex.unlock();
       }
-      //store the result in an image
-      result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
+
+      for (unsigned int x = 0; x < WindowSize_X; x++) {
+        Vec3Dd rgb = nullVector();
+        for (unsigned int z = 0; z < 9; z++) {
+          // Produce the rays for each pixel, by interpolating, the four rays of the frustum corners.
+          double x_offset = (z % 3 == 0) ? -0.5 : (z % 3 == 1) ? 0 : 0.5;
+          double y_offset = (z < 3) ? -0.5 : (z < 6) ? 0 : 0.5;
+          double xscale = 1.0 - double(x) / (WindowSize_X - (1 + x_offset));
+          double yscale = 1.0 - double(y) / (WindowSize_Y - (1 + y_offset));
+
+          origin = yscale * (xscale * origin00 + (1 - xscale) * origin10)
+                 + (1 - yscale) * (xscale * origin01 + (1 - xscale) * origin11);
+          dest   = yscale * (xscale * dest00 + (1 - xscale) * dest10)
+                 + (1 - yscale) * (xscale * dest01 + (1 - xscale) * dest11);
+
+          // Launch raytracing for the given ray.
+          rgb += performRayTracing(origin, dest) / 9;
+        }
+        // Store the result.
+        result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
+      }
     }
+
+    // Wait for new assignments.
+    std::cout << "[thread #" << id << "] Waiting... [" << wthreads + 1 << "]" << std::endl;
+    wmutex.lock();
+    wthreads++;
+    wmutex.unlock();
+
+    if (wthreads == threads) {
+      std::cout << "[thread #" << id << "] Done!" << std::endl;
+      for (unsigned n = 0; n < threads - 1; n++)
+        wqueue.push(std::tuple<unsigned, unsigned>(0, 0));
+      break;
+    }
+
+
+    std::tuple<unsigned, unsigned> t = wqueue.front();
+    wqueue.pop();
+
+    wmutex.lock();
+    wthreads--;
+    wmutex.unlock();
+
+    // Got new assignment, let's go.
+    minY = std::get<0>(t);
+    maxY = std::get<1>(t);
+    if (minY == 0 && maxY == 0)
+      break;
+
+    std::cout << "[thread #" << id << "] Got new work: " << minY << " - " << maxY << std::endl;
   }
 }
