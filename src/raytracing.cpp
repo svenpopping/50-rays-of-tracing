@@ -48,7 +48,23 @@ void init()
     //at least ONE light source has to be in the scene!!!
     //here, we set it to the current location of the camera
     MyLightPositions.push_back(MyCameraPosition);
-    
+  
+  // Lights
+  //
+  for (unsigned i = 0; i < MyMesh.triangles.size(); i++){
+    unsigned int triMat = MyMesh.triangleMaterials.at(i);
+    Material mat = MyMesh.materials.at(triMat);
+    if (mat.name().find(LIGHT_NAME) != std::string::npos) { // Reflection
+      Triangle triangle = MyMesh.triangles.at(i);
+      Vec3Dd v0 = MyMesh.vertices.at(triangle.v[0]).p;
+      Vec3Dd v1 = MyMesh.vertices.at(triangle.v[1]).p;
+      Vec3Dd v2 = MyMesh.vertices.at(triangle.v[2]).p;
+      MyLightPositions.push_back(v0);
+      MyLightPositions.push_back(v1);
+      MyLightPositions.push_back(v2);
+    }
+  }
+
 }
 
 //return the color of your pixel.
