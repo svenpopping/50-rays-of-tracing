@@ -66,19 +66,17 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     Triangle triangle;
 
 
-
-    for (unsigned i = 0; i < MyMesh.triangles.size(); i++){
-      triangle = MyMesh.triangles.at(i);
-      
-      Vec3Dd testIntersection = rayTriangleIntersect(origin, dir, triangle, depth);
-      if (!isNulVector(testIntersection) && !(testIntersection == origin)){
-
-        intersectionFound = true;
-        intersection = testIntersection;
-        index = i;
-        
-      }
-      
+    for (auto &n : hierarchy.nodes) {
+        if (!rayBoxIntersect(origin, dir, n.bounds[0], n.bounds[1]))
+            continue;
+        for (auto &t : n.children) {
+            Vec3Dd tintersection = rayTriangleIntersect(origin, dir, MyMesh.triangles[t.index], depth);
+            if (!isNulVector(tintersection) && tintersection != origin) {
+                intersectionFound = true;
+                intersection = tintersection;
+                index = t.index;
+            }
+        }
     }
 
     if(intersectionFound){
@@ -288,10 +286,33 @@ Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersec
 }
 // We can also add textures!
 
+bool rayBoxIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Vec3Dd &lb, const Vec3Dd &rb)
+{
+    double tx1 = (lb.p[0] - orig.p[0])*dir.p[0];
+    double tx2 = (rb.p[0] - orig.p[0])*dir.p[0];
+ 
+    double tmin = fmin(tx1, tx2);
+    double tmax = fmax(tx1, tx2);
+ 
+    double ty1 = (lb.p[1] - orig.p[1])*dir.p[1];
+    double ty2 = (rb.p[1] - orig.p[1])*dir.p[1];
+ 
+    tmin = fmax(tmin, fmin(ty1, ty2));
+    tmax = fmin(tmax, fmax(ty1, ty2));
+
+    double tz1 = (lb.p[2] - orig.p[2])*dir.p[2];
+    double tz2 = (rb.p[2] - orig.p[2])*dir.p[2];
+
+    tmin = fmax(tmin, fmin(tz1, tz2));
+    tmax = fmin(tmin, fmax(tz1, tz2));
+ 
+    return tmax >= tmin;
+}
+
 // The source of this function is:
 // http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 // Returns the point of intersection
-Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangle triangle, double &depth)
+Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangle &triangle, double &depth)
 {
     // compute plane's normal
     Vec3Dd N = getNormal(triangle);
