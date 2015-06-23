@@ -318,9 +318,9 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
 		  Vec3Dd color3 = nullVector();
 		  Vec3Dd color4 = nullVector();
 		  double start_space = 0.5;
-		  double samples = 4;
+		  double samples = 0;
 		  //launch raytracing for the corners.
-		  rgb = rgb + calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, x, y, start_space, rgb,samples);
+		  rgb = calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, x, y, start_space, rgb,samples);
 		  
       
       //rgb = rgb + performRayTracing(origin, dest)/9;
