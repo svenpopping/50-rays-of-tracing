@@ -16,7 +16,8 @@ public:
 
 	void build(const Mesh &m, const Vec3D<F> lb, const Vec3D<F> rb)
 	{
-		this->nodes.push_back(bvh_node<F>(lb, rb));
+		Vec3D<F> lbb = Vec3D<F>(-1.5, -1.5, -1.5), rbb = Vec3D<F>(1.5, 1.5, 1.5);
+		this->nodes.push_back(bvh_node<F>(lbb, rbb));
 		for (unsigned i = 0; i < m.triangles.size(); i++) {
 			add_child(m, i, m.triangles[i]);
 		}
@@ -36,35 +37,61 @@ public:
 		bool did_split;
 		do {
 			did_split = false;
-			for (bvh_node<F> &n : nodes) {
+	
+			for (auto ni = nodes.begin(); ni < nodes.end(); ni++) {
+				bvh_node<F> &n = *ni;
+
 				if (n.children.size() > N) {
-					did_split = true;
+					bool didx = false, didy = false, didz = false;
+					while (true) {
+						std::cout << "Found possible split: n = " << n.children.size() << std::endl;
 
-					F xd = fabs(n.bounds[0].p[0] - n.bounds[1].p[0]);
-					F yd = fabs(n.bounds[0].p[1] - n.bounds[1].p[1]);
-					F zd = fabs(n.bounds[0].p[2] - n.bounds[1].p[2]);
-					Vec3D<F> nl(n.bounds[0]), nu(n.bounds[1]);
-					if (xd >= yd && xd >= zd) {
-						n.bounds[1].p[0] -= 0.5 * xd;
-						nl.p[0] += 0.5 * xd;
-					} else if (yd >= xd && yd >= zd) {
-						n.bounds[1].p[1] -= 0.5 * yd;
-						nl.p[1] += 0.5 * yd;
-					} else {
-						n.bounds[1].p[2] -= 0.5 * zd;
-						nl.p[2] += 0.5 * zd;
-					}
+						F xd = n.bounds[1].p[0] - n.bounds[0].p[0], xxd = fabs(xd);
+						F yd = n.bounds[1].p[1] - n.bounds[0].p[1], yyd = fabs(yd);
+						F zd = n.bounds[1].p[2] - n.bounds[0].p[2], zzd = fabs(zd);
 
-					bvh_node<F> nn(nl, nu);
-					for (auto it = n.children.begin(); it < n.children.end(); it++) {
-						bvh_triangle<F> &t = *it;
-						if (!t.in(n.bounds[0], n.bounds[1])) {
-							nn.children.push_back(t);
-							n.children.erase(it);
+						std::cout << "Old bounds: " << n.bounds[0] << "/" << n.bounds[1] << std::endl;
+						Vec3D<F> nl(n.bounds[0]), nu(n.bounds[1]);
+						if (!didx && xxd >= yyd && xxd >= zzd) {
+							didx = true;
+							n.bounds[1].p[0] -= 0.5 * xd;
+							nl.p[0] += 0.5 * xd;
+						} else if (!didy && yyd >= xxd && yyd >= zzd) {
+							didy = true;
+							n.bounds[1].p[1] -= 0.5 * yd;
+							nl.p[1] += 0.5 * yd;
+						} else if (!didz) {
+							didz = true;
+							n.bounds[1].p[2] -= 0.5 * zd;
+							nl.p[2] += 0.5 * zd;
+						} else {
+							break;
+						}
+
+						
+						std::cout << "New bounds: " << n.bounds[0] << "/" << n.bounds[1] << std::endl;
+						std::cout << "dx / dy / dz: " << xd << " / " << yd << " / " << zd << std::endl;
+
+						bvh_node<F> nn(nl, nu);
+						for (auto it = n.children.begin(); it < n.children.end(); it++) {
+							const bvh_triangle<F> &t = *it;
+							if (!t.in(n.bounds[0], n.bounds[1])) {
+								nn.children.push_back(t);
+								n.children.erase(it);
+							}
+						}
+
+						if (nn.children.size() > 0) {
+							nodes.push_back(nn);
+							did_split = true;
+							didx = didy = didz = false;
+							//if (n.children.size() == 0)
+								//nodes.erase(ni);
+							break;
 						}
 					}
-					nodes.push_back(nn);
-					break;
+					if (did_split)
+						break;
 				}
 			}
 		} while (did_split);
@@ -108,21 +135,35 @@ public:
 		index = idx;
 	}
 
-	inline bool in(const Vec3D<F> &lb, const Vec3D<F> &rb)
+	inline bool in(const Vec3D<F> &lb, const Vec3D<F> &rb) const
 	{
-		if (lbound >= lb && rbound >= rb)
+		//std::cout << "DBG: " << *this << ".. " << lb << "/" << rb << std::endl;
+		if (lbound >= lb && rbound < rb)
 			return true;
-		return lb <= center && rb > center;
+		return center >= lb && center < rb;
 	}
 };
 
-template <typename F, int N> std::ostream &operator<<(std::ostream &output, const bvh<F, N> &b) {
+template <typename F, int N> std::ostream &operator<<(std::ostream &output, const bvh<F, N> &b)
+{
+	output << "BVH<N: " << b.nodes.size() << ">" << std::endl;
 	for (const bvh_node<F> &n : b.nodes) {
-		output << " node<L: " << n.bounds[0] << ", R: " << n.bounds[1] << ", S: " << n.children.size() << ">" <<  std::endl;
-		for (auto v : n.children) {
-			output << "  - triangle<X: " << v.vertices[0] << ", Y: " << v.vertices[1] << ", Z: " << v.vertices[2] << ", LB: " << v.lbound << ", RB: " << v.rbound << ", C: " << v.center << ">" << std::endl;
-		}
+		output << n;
 	}
 	return output;
 }
 
+template <typename F> std::ostream &operator<<(std::ostream &output, const bvh_node<F> &n)
+{
+	output << " node<L: " << n.bounds[0] << ", R: " << n.bounds[1] << ", S: " << n.children.size() << ">" << std::endl;
+	for (auto v : n.children) {
+		output << v;
+	}
+	return output;
+}
+
+template <typename F> std::ostream &operator<<(std::ostream &output, const bvh_triangle<F> &v)
+{
+	output << "  - triangle<X: " << v.vertices[0] << ", Y: " << v.vertices[1] << ", Z: " << v.vertices[2] << ", LB: " << v.lbound << ", RB: " << v.rbound << ", C: " << v.center << ">" << std::endl;
+	return output;
+}
