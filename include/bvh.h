@@ -17,8 +17,8 @@ public:
 	void build(const Mesh &m, const Vec3D<F> lb, const Vec3D<F> rb)
 	{
 		this->nodes.push_back(bvh_node<F>(lb, rb));
-		for (const Triangle &t : m.triangles) {
-			add_child(m, t);
+		for (unsigned i = 0; i < m.triangles.size(); i++) {
+			add_child(m, i, m.triangles[i]);
 		}
 
 		std::cout << *this << std::endl;
@@ -26,9 +26,9 @@ public:
 		std::cout << *this << std::endl;
 	}
 
-	void add_child(const Mesh &m, const Triangle &t)
+	void add_child(const Mesh &m, unsigned idx, const Triangle &t)
 	{
-		this->nodes[0].children.push_back(bvh_triangle<F>(m, t));
+		this->nodes[0].children.push_back(bvh_triangle<F>(m, idx, t));
 	}
 
 	void split(void)
@@ -95,8 +95,9 @@ public:
 	Vec3D<F> vertices[3];
 	Vec3D<F> lbound, rbound;
 	Vec3D<F> center;
+	unsigned index;
 
-	bvh_triangle(const Mesh &m, const Triangle &t)
+	bvh_triangle(const Mesh &m, unsigned idx, const Triangle &t)
 	{
 		vertices[0] = m.vertices.at(t.v[0]).p;
 		vertices[1] = m.vertices.at(t.v[1]).p;
@@ -104,6 +105,7 @@ public:
 		lbound = Vec3D<F>(pm(fmin, vertices, 0), pm(fmin, vertices, 1), pm(fmin, vertices, 2));
 		rbound = Vec3D<F>(pm(fmax, vertices, 0), pm(fmax, vertices, 1), pm(fmax, vertices, 2));
 		center = (vertices[0] + vertices[1] + vertices[2]) / 3;
+		index = idx;
 	}
 
 	inline bool in(const Vec3D<F> &lb, const Vec3D<F> &rb)
