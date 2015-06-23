@@ -10,6 +10,7 @@
 #endif
 
 #include "raytracing.h"
+#include "bvh.h"
 #include "helper.h" 
 
 //temporary variables
@@ -18,6 +19,7 @@
 #define MAX_LEVEL 15
 #define EPSILON   0.001
 
+bvh<double, 4> hierarchy;
 Vec3Dd testColor;
 Vec3Dd backgroundColor = nullVector();
 

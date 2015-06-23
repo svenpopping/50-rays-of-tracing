@@ -23,6 +23,7 @@
 #include "traqueboule.h"
 #include "imageWriter.h"
 #include "helper.h"
+#include "bvh.h"
 
 
 Vec3Dd MyCameraPosition;
@@ -35,6 +36,7 @@ std::vector<Vec3Dd> MyLightPositions;
 
 //Main mesh 
 Mesh MyMesh; 
+extern bvh<double, 4> hierarchy;
 
 unsigned int WindowSize_X = 800;  // resolution X
 unsigned int WindowSize_Y = 800;  // resolution Y
@@ -267,6 +269,7 @@ void startRaytracing() {
   produceRay(0,WindowSize_Y-1, &origin01, &dest01);
   produceRay(WindowSize_X-1,0, &origin10, &dest10);
   produceRay(WindowSize_X-1,WindowSize_Y-1, &origin11, &dest11);
+  hierarchy.build(MyMesh, origin00, origin11);
 
   std::vector<std::thread> t;
   for (unsigned n = 0; n < threads; n++)
