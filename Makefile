@@ -11,7 +11,7 @@ BINARY=./50_rays_of_tracing
 
 XVFBFLAGS=-screen 0 800x800x24
 CPPFLAGS=-I. -I$(INCDIR)
-CXXFLAGS=-std=c++11 -Wall -Wextra -pedantic -Wno-unused-argument -Wno-unused-variable -O3 -march=native -funroll-loops
+CXXFLAGS=-std=c++11 -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-unused-variable -O3 -march=native -funroll-loops
 include mk/$(shell uname -s).mk
 
 

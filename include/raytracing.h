@@ -41,16 +41,17 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
 void clearDebugVector();
 void toggleDebug();
 void toggleFillColor();
+void toggleBackgroundColor();
 
 //Shadow Functions
 double ShadowPercentage(const Vec3Dd point, int j);
-bool inShadow(const Vec3Dd point, int index, const Vec3Dd source);
+bool inShadow(const Vec3Dd point, unsigned index, const Vec3Dd source);
 
 // Shading functions
 Vec3Dd shade(const Vec3Dd origin, const Vec3Dd intersection, int level, int triangleIndex, Vec3Dd normal);
 Vec3Dd diffuse(const Vec3Dd light, Vec3Dd normal,  int triangleIndex);
 Vec3Dd ambient(int triangleIndex);
-Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirectionN, int triangleIndex);
+Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirectionN, int triangleIndex, const Vec3Dd N);
 Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint);
 
 

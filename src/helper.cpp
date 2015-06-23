@@ -19,6 +19,7 @@
 #include "Vertex.h"
 #include "helper.h"
 #include "mesh.h"
+#include <math.h>
 
 void printVector(Vec3Dd vector){
     std::cout << "Vector: [" << vector.p[0] << "," << vector.p[1] << "," << vector.p[3] << "]" << std::endl;
@@ -64,6 +65,35 @@ Vec3Dd getNormal(Triangle triangle){
   // no need to normalize
   Vec3Dd N = Vec3Dd::crossProduct(v0v1, v0v2); // N
   return N;
+}
+
+double triangleArea(const Vec3Dd A, const Vec3Dd B, const Vec3Dd C) {
+	Vec3Dd BA = B - A;
+	Vec3Dd CA = C - A;
+	return (BA.getLength() * CA.getLength() * sin( acos( Vec3Dd::dotProduct(BA, CA)/ ( BA.getLength()*CA.getLength() ) ) ))/2;
+}
+
+Vec3Dd getNormalAtIntersection(const Vec3Dd intersection, const Triangle triangle) {
+
+	//Find the vertices of the triangle.
+	Vec3Dd v0 = MyMesh.vertices.at(triangle.v[0]).p;
+	Vec3Dd v1 = MyMesh.vertices.at(triangle.v[1]).p;
+	Vec3Dd v2 = MyMesh.vertices.at(triangle.v[2]).p;
+
+	//Find normal vectors at the vertices.
+	Vec3Dd n0 = MyMesh.vertices.at(triangle.v[0]).n;
+	Vec3Dd n1 = MyMesh.vertices.at(triangle.v[1]).n;
+	Vec3Dd n2 = MyMesh.vertices.at(triangle.v[2]).n;
+
+	// Find the area of all triangles.
+	double a0 = triangleArea(v1, v2, intersection);
+	double a1 = triangleArea(v0, v2, intersection);
+	double a2 = triangleArea(v0, v1, intersection);
+	double a =  triangleArea(v0, v1, v2);
+
+
+	//Interpolate the normal at intersection point.
+	return (a0 * n0 + a1 * n1 + a2 * n2) / a;
 }
 
 void printLine(std::string string){
