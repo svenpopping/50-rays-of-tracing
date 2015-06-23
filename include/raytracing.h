@@ -26,8 +26,8 @@ void init();
 void produceRay(int x_I, int y_I, Vec3Dd & origin, Vec3Dd & dest);
 
 
-Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangle triangle, double &depth);
-
+Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangle triangle, double &depth, double &bcc0, double &bcc1, double &bcc2);
+Vec3Dd triangleIntersectionPoint(const Vec3Dd &orig, const Vec3Dd &dir, const Triangle triangle, double &depth, double &t);
 
 //your main function to rewrite
 Vec3Dd performRayTracing(const Vec3Dd & origin, const Vec3Dd & dest);

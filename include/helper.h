@@ -30,7 +30,9 @@ bool isNulVector(Vec3Dd vector);
 
 Vec3Dd getNormal(Triangle triangle);
 
-Vec3Dd getNormalAtIntersection(Vec3Dd intersection, Triangle triangle);
+void barycentricCoords(const Vec3Dd intersection, const Triangle triangle, double &c0, double &c1, double &c2);
+
+Vec3Dd getNormalAtIntersection(const Vec3Dd intersection, const Triangle triangle, const double c0, const double c1, const double c2);
 
 unsigned getThreadCount(void);
 

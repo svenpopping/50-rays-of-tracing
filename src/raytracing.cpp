@@ -66,24 +66,23 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     Triangle triangle;
 
 
+	double bcc0, bcc1, bcc2;
 
     for (  int i = 0; i < MyMesh.triangles.size(); i++){
       triangle = MyMesh.triangles.at(i);
-      
-      Vec3Dd testIntersection = rayTriangleIntersect(origin, dir, triangle, depth);
+      Vec3Dd testIntersection = rayTriangleIntersect(origin, dir, triangle, depth, bcc0, bcc1, bcc2);
       if (!isNulVector(testIntersection) && !(testIntersection == origin)){
 
         intersectionFound = true;
         intersection = testIntersection;
         index = i;
-        
       }
       
     }
 
     if(intersectionFound){
       double ShadowScalar = 1.0 - ShadowPercentage(intersection, index);
-      color = shade(dir, intersection, level, index, getNormalAtIntersection(intersection, MyMesh.triangles.at(index)));
+      color = shade(dir, intersection, level, index, getNormalAtIntersection(intersection, MyMesh.triangles.at(index), bcc0, bcc1, bcc2));
       color = color*ShadowScalar;
       
     }
@@ -118,12 +117,13 @@ double ShadowPercentage(const Vec3Dd point, int j) {
 
 bool inShadow(const Vec3Dd point, int j, const Vec3Dd lightSource) {
     double depth = DBL_MAX;
+	double dummy0, dummy1, dummy2;
     bool interrupt  = false;
     for (int i = 0; i < MyMesh.triangles.size(); i++) {
         Triangle triangle = MyMesh.triangles.at(i);
         Vec3Dd dir = lightVector(point, lightSource);
         Vec3Dd offsetPoint = point + dir * 0.1;
-        Vec3Dd intersection = rayTriangleIntersect(offsetPoint, dir, triangle, depth);
+		Vec3Dd intersection = rayTriangleIntersect(offsetPoint, dir, triangle, depth, dummy0, dummy1, dummy2);
         if (!isNulVector(intersection) && i != j) {
             interrupt = true;
         }
@@ -291,35 +291,35 @@ Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersec
 // The source of this function is:
 // http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 // Returns the point of intersection
-Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangle triangle, double &depth)
+Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangle triangle, double &depth, double &bcc0, double &bcc1, double &bcc2)
 {
-    // compute plane's normal
-    Vec3Dd N = getNormal(triangle);
-    
-    Vec3Dd v0 = MyMesh.vertices.at(triangle.v[0]).p;
-    Vec3Dd v1 = MyMesh.vertices.at(triangle.v[1]).p;
-    Vec3Dd v2 = MyMesh.vertices.at(triangle.v[2]).p;
-    
-    // Step 1: finding P (the point where the ray intersects the plane)
-    
-    // check if ray and plane are parallel ?
-    double NdotRayDirection = Vec3Dd::dotProduct(N, dir);
-    if (fabs(NdotRayDirection) < EPSILON) // almost 0
-        return nullVector(); // they are parallel so they don't intersect !
-    
-    // compute d parameter using equation 2 (d is the distance from the origin (0, 0, 0) to the plane)
-    double d = Vec3Dd::dotProduct(N, v0);
-    
-    // compute t (equation 3) (t is distance from the ray origin to P)
-    double t = (-Vec3Dd::dotProduct(N, orig) + d) / NdotRayDirection;
-    // check if the triangle is in behind the ray
-    if (t < EPSILON) return nullVector(); // the triangle is behind
-    if (t > depth) return nullVector(); // already have something closerby
-    
-    // compute the intersection point P using equation 1
-    Vec3Dd P = orig + t * dir;
-    
-    // Step 2: inside-outside test
+	double t, c0, c1, c2;
+	Vec3Dd P = triangleIntersectionPoint(orig, dir, triangle, depth, t);
+
+	if (isNulVector(P)) {
+		return P;
+	}
+	//BARYCENTRIC COORDINATES APPROACH
+
+	barycentricCoords(P, triangle, c0, c1, c2);
+
+	if (c0 < 0 || c0 > 1) {
+		return nullVector();
+	}
+	else if (c1 < 0) {
+		return nullVector();
+	}
+	else if ((c0 + c1) > 1) {
+		return nullVector();
+	}
+
+	bcc0 = c0;
+	bcc1 = c1;
+	bcc2 = c2;
+	depth = t;
+	return P;
+
+/*    // Step 2: inside-outside test
     Vec3Dd C; // vector perpendicular to triangle's plane
     
     // edge 0
@@ -341,7 +341,7 @@ Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangl
     if (Vec3Dd::dotProduct(N, C) < 0) return nullVector(); // P is on the right side;
     
     depth = t;
-    return P; // this is the intersectionpoint
+    return P; // this is the intersectionpoint */
 }
 
 //Shade(level, hit, &color){
@@ -353,6 +353,34 @@ Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangl
 //  color = directColor + reflection * reflectedcolor + transmission * refractedColor;
 //}
 
+Vec3Dd triangleIntersectionPoint(const Vec3Dd &orig, const Vec3Dd &dir, const Triangle triangle, double &depth, double &t) {
+
+	// compute plane's normal
+	Vec3Dd N = getNormal(triangle);
+
+	Vec3Dd v0 = MyMesh.vertices.at(triangle.v[0]).p;
+	Vec3Dd v1 = MyMesh.vertices.at(triangle.v[1]).p;
+	Vec3Dd v2 = MyMesh.vertices.at(triangle.v[2]).p;
+
+	// Step 1: finding P (the point where the ray intersects the plane)
+
+	// check if ray and plane are parallel ?
+	double NdotRayDirection = Vec3Dd::dotProduct(N, dir);
+	if (fabs(NdotRayDirection) < EPSILON) // almost 0
+		return nullVector(); // they are parallel so they don't intersect !
+
+	// compute d parameter using equation 2 (d is the distance from the origin (0, 0, 0) to the plane)
+	double d = Vec3Dd::dotProduct(N, v0);
+
+	// compute t (equation 3) (t is distance from the ray origin to P)
+	t = (-Vec3Dd::dotProduct(N, orig) + d) / NdotRayDirection;
+	// check if the triangle is in behind the ray
+	if (t < EPSILON) return nullVector(); // the triangle is behind
+	if (t > depth) return nullVector(); // already have something closerby
+
+	// compute the intersection point P using equation 1
+	return orig + t * dir;
+}
 
 
 void yourDebugDraw()

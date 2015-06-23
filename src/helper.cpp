@@ -73,27 +73,32 @@ double triangleArea(const Vec3Dd A, const Vec3Dd B, const Vec3Dd C) {
 	return (BA.getLength() * CA.getLength() * sin( acos( Vec3Dd::dotProduct(BA, CA)/ ( BA.getLength()*CA.getLength() ) ) ))/2;
 }
 
-Vec3Dd getNormalAtIntersection(const Vec3Dd intersection, const Triangle triangle) {
-
+void barycentricCoords(const Vec3Dd intersection, const Triangle triangle, double &c0, double &c1, double &c2) {
 	//Find the vertices of the triangle.
 	Vec3Dd v0 = MyMesh.vertices.at(triangle.v[0]).p;
 	Vec3Dd v1 = MyMesh.vertices.at(triangle.v[1]).p;
 	Vec3Dd v2 = MyMesh.vertices.at(triangle.v[2]).p;
+
+	// Find the area of all triangles.
+	double a0 = triangleArea(v1, v2, intersection);
+	double a1 = triangleArea(v0, v2, intersection);
+	double a = triangleArea(v0, v1, v2);
+	double a2 = a - (a0 + a1);
+
+	c0 = a0 / a;
+	c1 = a1 / a;
+	c2 = a2 / a;
+}
+
+Vec3Dd getNormalAtIntersection(const Vec3Dd intersection, const Triangle triangle, const double c0, const double c1, const double c2) {
 
 	//Find normal vectors at the vertices.
 	Vec3Dd n0 = MyMesh.vertices.at(triangle.v[0]).n;
 	Vec3Dd n1 = MyMesh.vertices.at(triangle.v[1]).n;
 	Vec3Dd n2 = MyMesh.vertices.at(triangle.v[2]).n;
 
-	// Find the area of all triangles.
-	double a0 = triangleArea(v1, v2, intersection);
-	double a1 = triangleArea(v0, v2, intersection);
-	double a2 = triangleArea(v0, v1, intersection);
-	double a =  triangleArea(v0, v1, v2);
-
-
 	//Interpolate the normal at intersection point.
-	return (a0 * n0 + a1 * n1 + a2 * n2) / a;
+	return (c0 * n0 + c1 * n1 + c2 * n2);
 }
 
 void printLine(std::string string){
