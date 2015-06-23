@@ -46,7 +46,6 @@ void init()
     //at least ONE light source has to be in the scene!!!
     //here, we set it to the current location of the camera
     MyLightPositions.push_back(MyCameraPosition);
-    
 }
 
 //return the color of your pixel.
@@ -82,7 +81,7 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
 
     if(intersectionFound){
       double ShadowScalar = 1.0 - ShadowPercentage(intersection, index);
-      color = shade(dir, intersection, level, index, getNormal(MyMesh.triangles.at(index)));
+      color = shade(dir, intersection, level, index, getNormalAtIntersection(intersection, MyMesh.triangles.at(index)));
       color = color*ShadowScalar;
       
     }
@@ -149,7 +148,7 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
     Vec3Dd color = Vec3Dd(0, 0, 0);
 
     color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
-    color += speculair(lightDirection, viewDirection.getNormalized(), triangleIndex);
+    color += speculair(lightDirection.getNormalized(), viewDirection.getNormalized(), triangleIndex, N.getNormalized());
     
     //add it to the total
   	totalColor += clamp(color);
@@ -251,12 +250,10 @@ Vec3Dd ambient(int triangleIndex){
 }
 
 
-Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int triangleIndex){
+Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int triangleIndex, const Vec3Dd N){
   Vec3Dd lightN = lightDirection / lightDirection.getLength();
-  Vec3Dd N = getNormal(MyMesh.triangles.at(triangleIndex));
-  Vec3Dd normalN = N / N.getLength();
   
-  Vec3Dd reflection = reflectionVector(lightN, normalN);
+  Vec3Dd reflection = reflectionVector(lightN, N);
 	Vec3Dd color = Vec3Dd(0, 0, 0);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 	color = MyMesh.materials.at(triMat).Ks();

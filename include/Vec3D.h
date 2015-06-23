@@ -139,7 +139,7 @@ public:
         return (T)sqrt (getSquaredLength());
     };
 
-    /// Return length after normalization
+    /// Return Vector after normalization
     inline Vec3D getNormalized (void) const {
         T length = getLength();
         return (*this / length);
@@ -207,6 +207,8 @@ public:
         Vec3D tmp = v1 - v2;
         return (tmp.getLength());
     }
+
+	/// Alpha ranges from 0 to 1. As alpha approaches 1, the result approaches the Vector v.
     static inline Vec3D interpolate (const Vec3D & u, const Vec3D & v, T alpha) {
         return (u * (1.0f - alpha) + v * alpha);
     }
