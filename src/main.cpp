@@ -42,6 +42,10 @@ unsigned int WindowSize_Y = 800;  // resolution Y
 // Worker threads.
 unsigned threads;
 
+// helper variables.
+double EPSILON = 0.1;
+double MAX_SAMPLES = 5; // this are 5 steps ( 4^5).
+
 
 /**
  * Main function, which is drawing an image (frame) on the screen
@@ -64,11 +68,12 @@ void reshape(int w, int h);
 void keyboard(unsigned char key, int x, int y);
 void startRaytracing();
 void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, int id, unsigned minY, unsigned maxY);
-void calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11,
-	Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4, double x, double y, double space);
+Vec3Dd calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11,
+	Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4, double x, double y, double space, Vec3Dd rgb, double amountofsamples);
 Vec3Dd calculateRay(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, double x_offset, double y_offset,
 	double x, double y);
 bool compareColor(Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4);
+bool compareWithEpsilon(Vec3Dd vec1, Vec3Dd vec2);
 
 /**
  * Main Programme
@@ -277,48 +282,60 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
       double perc = (float)(y - minY) / (float)(maxY - minY);
       std::cout << "[thread #" << id << "] " << 100 * perc << "%" << std::endl;
     }
+	//for (unsigned int x = 0; x<WindowSize_X;++x) {
+	//	Vec3Dd rgb = nullVector();
+	//	for (unsigned int z = 0; z < 9;z++) {
+	//		//produce the rays for each pixel, by interpolating
+	//		//the four rays of the frustum corners.
+	//		double x_offset = (z % 3 == 0) ? -0.5 : (z % 3 == 1) ? 0 : 0.5;
+	//		double y_offset = (z < 3) ? -0.5 : (z < 6) ? 0 : 0.5;
+	//		double xscale = 1.0f - float(x) / (WindowSize_X - (1 + x_offset));
+	//		double yscale = 1.0f - float(y) / (WindowSize_Y - (1 + y_offset));
+
+	//		origin = yscale*(xscale*origin00 + (1 - xscale)*origin10) +
+	//			(1 - yscale)*(xscale*origin01 + (1 - xscale)*origin11);
+	//		dest = yscale*(xscale*dest00 + (1 - xscale)*dest10) +
+	//			(1 - yscale)*(xscale*dest01 + (1 - xscale)*dest11);
+
+	//		//launch raytracing for the given ray.
+	//		rgb = rgb + performRayTracing(origin, dest) / 9;
+	//	}
+	//	//store the result in an image
+	//	result.setPixel(x, y, RGBValue(rgb[0], rgb[1], rgb[2]));
+	//}
+
+
+
 
     for (unsigned int x=0; x<WindowSize_X;++x) {
-      Vec3Dd rgb = nullVector();
+		Vec3Dd rgb = nullVector();
           //produce the rays for each pixel, by interpolating
-      //the four rays of the frustum corners.
+		//the four rays of the frustum corners.
 		// adaptive sampling
 		// calculate the corners, compare. If different - calculate again.
 		  Vec3Dd color1 = nullVector();
 		  Vec3Dd color2 = nullVector();
 		  Vec3Dd color3 = nullVector();
 		  Vec3Dd color4 = nullVector();
-		  double start_space = 1;
+		  double start_space = 0.5;
+		  double samples = 4;
 		  //launch raytracing for the corners.
-		  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, x, y, start_space);
-
-		  // corner colors are equal
-		  if (compareColor(color1, color2, color3, color4)) {
-			  // doesn't matter what color we take since they are equal.
-			  rgb = color1;
-		  }
-		  else {
-
-		  }
-
+		  rgb = rgb + calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, x, y, start_space, rgb,samples);
+		  
       
       //rgb = rgb + performRayTracing(origin, dest)/9;
       
       //store the result in an image
       result.setPixel(x,y, RGBValue(rgb[0], rgb[1], rgb[2]));
     }
+	
   }
 }
 
 
-void calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, 
-	Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4, double x, double y,double space ) {
-	
-	color1 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x - space, y - space, x, y);
-	color2 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x - space, y + space, x, y);
-	color3 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x + space, y - space, x, y);
-	color4 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x + space, y + space, x, y);
-
+Vec3Dd calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, 
+	Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4, double x, double y,double space, Vec3Dd rgb,double amountofsamples ) {
+	Vec3Dd newcolor = nullVector();
 	/*
 	Calculate for x - space & y - space
 	x - space & y + space
@@ -326,6 +343,31 @@ void calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd
 	x + space & y + space
 
 	*/
+	color1 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, -space, -space, x, y);
+	color2 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, space, -space, x, y);
+	color3 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, -space, space, x, y);
+	color4 = calculateRay(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, space, space, x, y);
+	
+	// corner colors are equal
+	if ( amountofsamples > MAX_SAMPLES || compareColor(color1, color2, color3, color4)) {
+		// doesn't matter what color we take since they are equal.
+		newcolor = ((color1 + color2 + color3 + color4) / 4);
+	}
+	else {
+		//rgb = rgb + ((color1 + color2 + color3 + color4) / amountofsamples);
+		color1 = nullVector();
+		color2 = nullVector();
+		color3 = nullVector();
+		color4 = nullVector();
+		double newspace = space / 2;
+		amountofsamples = amountofsamples + 1;
+
+		newcolor = 0.25 * calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1,color2,color3,color4, (x - newspace), (y - newspace),newspace,rgb,amountofsamples );
+		newcolor = newcolor + (0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, (x + newspace), (y - newspace), newspace, rgb, amountofsamples));
+		newcolor = newcolor + 0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, (x - newspace), (y + newspace), newspace, rgb, amountofsamples);
+		newcolor = newcolor + 0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, (x + newspace), (y + newspace), newspace, rgb, amountofsamples);
+	}
+	return newcolor;
 }
 
 Vec3Dd calculateRay(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, double x_offset, double y_offset,
@@ -345,7 +387,15 @@ Vec3Dd calculateRay(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &
 
 bool compareColor(Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4) {
 	bool equal = false;
-	if (color1 == color2 && color2 == color3 && color3 == color4 && color4 == color1) {
+	if ( compareWithEpsilon(color1,color2) && compareWithEpsilon(color2, color3) && compareWithEpsilon(color3, color4) && compareWithEpsilon(color4,color1) && compareWithEpsilon(color1,color3) && compareWithEpsilon(color2,color4) ){
+		equal = true;
+	}
+	return equal;
+}
+
+bool compareWithEpsilon(Vec3Dd vec1, Vec3Dd vec2) {
+	bool equal = false;
+	if (abs(vec1[0] - vec2[0]) < EPSILON && abs(vec1[1] - vec2[1]) < EPSILON && abs(vec1[2] - vec2[2]) < EPSILON) {
 		equal = true;
 	}
 	return equal;
