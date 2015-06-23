@@ -30,6 +30,8 @@ bool isNulVector(Vec3Dd vector);
 
 Vec3Dd getNormal(Triangle triangle);
 
+Vec3Dd getNormalAtIntersection(Vec3Dd intersection, Triangle triangle);
+
 unsigned getThreadCount(void);
 
 #endif
