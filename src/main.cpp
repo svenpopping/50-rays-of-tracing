@@ -43,8 +43,8 @@ unsigned int WindowSize_Y = 800;  // resolution Y
 unsigned threads;
 
 // helper variables.
-double EPSILON = 0.1;
-double MAX_SAMPLES = 5; // this are 5 steps ( 4^5).
+double EPSILON = 0.05;
+double MAX_SAMPLES = 2; // this are 5 steps ( 4^5).
 
 
 /**
@@ -69,7 +69,7 @@ void keyboard(unsigned char key, int x, int y);
 void startRaytracing();
 void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, int id, unsigned minY, unsigned maxY);
 Vec3Dd calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11,
-	Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4, double x, double y, double space, Vec3Dd rgb, double amountofsamples);
+	double x, double y, double space, double amountofsamples);
 Vec3Dd calculateRay(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, double x_offset, double y_offset,
 	double x, double y);
 bool compareColor(Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4);
@@ -340,7 +340,7 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
 		  double start_space = 0.5;
 		  double samples = 0;
 		  //launch raytracing for the corners.
-		  rgb = calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, x, y, start_space, rgb,samples);
+		  rgb = calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, x, y, start_space,samples);
 		  
       
       //rgb = rgb + performRayTracing(origin, dest)/9;
@@ -354,8 +354,9 @@ void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &orig
 
 
 Vec3Dd calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, 
-	Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4, double x, double y,double space, Vec3Dd rgb,double amountofsamples ) {
+	double x, double y,double space,double amountofsamples ) {
 	Vec3Dd newcolor = nullVector();
+	Vec3Dd color1, color2, color3, color4;
 	/*
 	Calculate for x - space & y - space
 	x - space & y + space
@@ -382,10 +383,10 @@ Vec3Dd calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3
 		double newspace = space / 2;
 		amountofsamples = amountofsamples + 1;
 
-		newcolor = 0.25 * calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1,color2,color3,color4, (x - newspace), (y - newspace),newspace,rgb,amountofsamples );
-		newcolor = newcolor + (0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, (x + newspace), (y - newspace), newspace, rgb, amountofsamples));
-		newcolor = newcolor + 0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, (x - newspace), (y + newspace), newspace, rgb, amountofsamples);
-		newcolor = newcolor + 0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, color1, color2, color3, color4, (x + newspace), (y + newspace), newspace, rgb, amountofsamples);
+		newcolor = 0.25 * calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11,  (x - newspace), (y - newspace),newspace,amountofsamples );
+		newcolor = newcolor + (0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, (x + newspace), (y - newspace), newspace, amountofsamples));
+		newcolor = newcolor + 0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, (x - newspace), (y + newspace), newspace, amountofsamples);
+		newcolor = newcolor + 0.25 *  calculateCorners(origin00, dest00, origin01, dest01, origin10, dest10, origin11, dest11, (x + newspace), (y + newspace), newspace, amountofsamples);
 	}
 	return newcolor;
 }
@@ -394,8 +395,8 @@ Vec3Dd calculateRay(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &
 	double x, double y) {
 	Vec3Dd origin, dest;
 
-	double xscale = 1.0f - float(x) / (WindowSize_X - (1 + x_offset));
-	double yscale = 1.0f - float(y) / (WindowSize_Y - (1 + y_offset));
+	double xscale = 1.0 - (x) / (WindowSize_X - (1.0 + x_offset));
+	double yscale = 1.0 - (y) / (WindowSize_Y - (1.0 + y_offset));
 
 	origin = yscale*(xscale*origin00 + (1 - xscale)*origin10) +
 		(1 - yscale)*(xscale*origin01 + (1 - xscale)*origin11);
