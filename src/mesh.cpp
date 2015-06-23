@@ -167,12 +167,14 @@ bool Mesh::loadMesh(const char * filename, bool randomizeTriangulation)
         {
             char mtlfile[128];
             char *p0 = s+6, *p1;
-            while( isspace(*++p0) ); p1=p0;
+            while( isspace(*++p0) );
+            p1=p0;
+
             std::string t = p1;
-			int i;
-            for (i = 0; i < t.length(); ++i)
+            unsigned i = 0;
+            for (; i < t.length(); ++i)
             {
-				if (t[i] < 32 || t[i] == 255)
+				if (t[i] < 32 || (unsigned)t[i] == 255)
 				{
 					break; 
 				}
@@ -189,8 +191,10 @@ bool Mesh::loadMesh(const char * filename, bool randomizeTriangulation)
         else if (strncmp(s, "usemtl ", 7)==0)
         {
             char *p0 = s+6, *p1;
-            while( isspace(*++p0) ); p1=p0;
-            while(!isspace(*p1)) ++p1; *p1='\0';
+            while( isspace(*++p0) );
+            p1=p0;
+            while(!isspace(*p1)) ++p1;
+            *p1='\0';
             matname = p0;      
             if (materialIndex.find(matname)==materialIndex.end())
             {
@@ -387,8 +391,10 @@ bool Mesh::loadMtl(const char * filename, std::map<string, unsigned int> & mater
         else if (strncmp(line, "newmtl ", 7)==0) // begin new material definition
         {
             char *p0 = line+6, *p1;
-            while( isspace(*++p0) ); p1=p0;
-            while(!isspace(*p1)) ++p1; *p1='\0';
+            while( isspace(*++p0) );
+            p1=p0;
+            while(!isspace(*p1)) ++p1;
+            *p1='\0';
             key   = p0;
             indef = true;
         }

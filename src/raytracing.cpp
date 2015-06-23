@@ -15,13 +15,11 @@
 //temporary variables
 //these are only used to illustrate
 //a simple debug drawing. A ray
-
+#define MAX_LEVEL 15
+#define EPSILON   0.001
 
 Vec3Dd testColor;
 Vec3Dd backgroundColor = nullVector();
-
-int MAX_LEVEL = 15;
-int EPSILON = 0.001;
 
 std::vector<Vec3Dd> rayOrigins;
 std::vector<Vec3Dd> rayIntersections;
@@ -68,7 +66,7 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
 
 
 
-    for (  int i = 0; i < MyMesh.triangles.size(); i++){
+    for (unsigned i = 0; i < MyMesh.triangles.size(); i++){
       triangle = MyMesh.triangles.at(i);
       
       Vec3Dd testIntersection = rayTriangleIntersect(origin, dir, triangle, depth);
@@ -104,9 +102,9 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
 }
 
 double ShadowPercentage(const Vec3Dd point, int j) {
-    int Lightpoints = MyLightPositions.size();
+    unsigned Lightpoints = MyLightPositions.size();
     double shadows = 0.0;
-    for (int i = 0; i < Lightpoints; i++) {
+    for (unsigned i = 0; i < Lightpoints; i++) {
         if (inShadow(point, j, MyLightPositions.at(i))) {
             shadows++;
         }
@@ -117,10 +115,10 @@ double ShadowPercentage(const Vec3Dd point, int j) {
 }
 
 
-bool inShadow(const Vec3Dd point, int j, const Vec3Dd lightSource) {
+bool inShadow(const Vec3Dd point, unsigned j, const Vec3Dd lightSource) {
     double depth = DBL_MAX;
     bool interrupt  = false;
-    for (int i = 0; i < MyMesh.triangles.size(); i++) {
+    for (unsigned i = 0; i < MyMesh.triangles.size(); i++) {
         Triangle triangle = MyMesh.triangles.at(i);
         Vec3Dd dir = lightVector(point, lightSource);
         Vec3Dd offsetPoint = point + dir * 0.1;
@@ -145,7 +143,7 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
   Vec3Dd viewDirection = MyCameraPosition - intersection;
   
   // loop for all lightpositions
-  for(int i = 0; i < MyLightPositions.size(); ++i) {
+  for (unsigned i = 0; i < MyLightPositions.size(); ++i) {
     Vec3Dd lightDirection = lightVector(intersection, MyLightPositions.at(i));
 
     Vec3Dd color = Vec3Dd(0, 0, 0);
@@ -372,13 +370,13 @@ void yourDebugDraw()
     glColor3d(1, 1, 1);
     glPointSize(10);
     glBegin(GL_POINTS);
-    for (int i = 0; i<MyLightPositions.size(); ++i)
+    for (unsigned i = 0; i<MyLightPositions.size(); ++i)
         glVertex3dv(MyLightPositions[i].pointer());
   glEnd();
   
     //Show rays
     if(debug){
-        for(std::vector<Vec3Dd>::size_type i = 0; i != rayColors.size(); i++) {
+        for (unsigned i = 0; i != rayColors.size(); i++) {
             Vec3Dd color = rayColors.at(i);
             Vec3Dd origin = rayOrigins.at(i);
             Vec3Dd intersection = rayIntersections.at(i);

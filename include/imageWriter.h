@@ -70,7 +70,7 @@
 				return r;
 		}
 	}
-	double r, b, g;
+	double r, g, b;
 };
 
 
