@@ -45,8 +45,16 @@ template <class T> bool operator< (const Vec3D<T> & a, const Vec3D<T> & b) {
     return (a[0] < b[0] && a[1] < b[1] && a[2] < b[2]);
 }
 
+template <class T> bool operator> (const Vec3D<T> & a, const Vec3D<T> & b) {
+    return (a[0] > b[0] || a[1] > b[1] || a[2] > b[2]);
+}
+
 template <class T> bool operator>= (const Vec3D<T> & a, const Vec3D<T> & b) {
     return (a[0] >= b[0] || a[1] >= b[1] || a[2] >= b[2]);
+}
+
+template <class T> bool operator<= (const Vec3D<T> & a, const Vec3D<T> & b) {
+    return (a[0] <= b[0] || a[1] <= b[1] || a[2] <= b[2]);
 }
 
 

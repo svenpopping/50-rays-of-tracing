@@ -23,6 +23,7 @@
 #include "traqueboule.h"
 #include "imageWriter.h"
 #include "helper.h"
+#include "bvh.h"
 
 
 Vec3Dd MyCameraPosition;
@@ -32,6 +33,7 @@ Vec3Dd MyCameraPosition;
 //used for the real-time rendering is NOT one of these, 
 //but following the camera instead.
 std::vector<Vec3Dd> MyLightPositions;
+extern bvh<double, 6> hierarchy;
 
 //Main mesh 
 Mesh MyMesh; 
@@ -262,6 +264,8 @@ void startRaytracing() {
   Vec3Dd origin01, dest01;
   Vec3Dd origin10, dest10;
   Vec3Dd origin11, dest11;
+
+  hierarchy.build(MyMesh, dest00, dest11);
 
   produceRay(0,0, &origin00, &dest00);
   produceRay(0,WindowSize_Y-1, &origin01, &dest01);
