@@ -43,8 +43,8 @@ unsigned int WindowSize_Y = 800;  // resolution Y
 
 
 // helper variables for adaptive Anti-Aliasing.
-#define EPSILON  0.05
-#define MAX_SAMPLES  5 
+#define EPSILON  0.0005
+#define MAX_SAMPLES  10
 
 // Worker threads.
 unsigned threads, wthreads = 0;
@@ -120,7 +120,7 @@ int main(int argc, char** argv)
     //initialize viewpoint
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glTranslatef(0,0,-4);
+    glTranslatef(0,-0.5,-2);
     tbInitTransform();     // This is for the trackball, please ignore
     tbHelp();             // idem
     MyCameraPosition=getCameraPosition();

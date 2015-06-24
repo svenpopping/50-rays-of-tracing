@@ -15,7 +15,7 @@
 //temporary variables
 //these are only used to illustrate
 //a simple debug drawing. A ray
-#define MAX_LEVEL 15
+#define MAX_LEVEL 1
 #define EPSILON   0.001
 
 Vec3Dd testColor;
@@ -326,7 +326,7 @@ Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint){
 
 Vec3Dd reflectionVector(const Vec3Dd lightDirection, const Vec3Dd normalVector) {
     Vec3Dd reflection = Vec3Dd(0, 0, 0);
-	reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
+    reflection = lightDirection - 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector;
     return reflection;
 }
 // We can also add textures!
