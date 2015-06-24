@@ -44,8 +44,7 @@ void toggleFillColor();
 void toggleBackgroundColor();
 
 //Shadow Functions
-double ShadowPercentage(const Vec3Dd point, int j);
-bool inShadow(const Vec3Dd point, unsigned index, const Vec3Dd source);
+bool inShadow(const Vec3Dd intersection, const Vec3Dd lightDirection);
 
 // Shading functions
 Vec3Dd shade(const Vec3Dd origin, const Vec3Dd intersection, int level, int triangleIndex, Vec3Dd normal);

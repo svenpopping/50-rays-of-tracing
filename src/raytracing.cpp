@@ -85,9 +85,7 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     }
 
     if(intersectionFound){
-      double ShadowScalar = 1.0 - ShadowPercentage(intersection, index);
       color = shade(dir, intersection, level, index, getNormalAtIntersection(intersection, MyMesh.triangles.at(index)));
-      color = color*ShadowScalar;
       
     }
   
@@ -105,38 +103,23 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     return color;
 }
 
-double ShadowPercentage(const Vec3Dd point, int j) {
-    unsigned Lightpoints = MyLightPositions.size();
-    double shadows = 0.0;
-    for (unsigned i = 0; i < Lightpoints; i++) {
-        if (inShadow(point, j, MyLightPositions.at(i))) {
-            shadows++;
-        }
-    }
-    //std::cout << Lightpoints;
-    shadows = shadows/Lightpoints;
-    return shadows;
-}
 
-
-bool inShadow(const Vec3Dd point, unsigned j, const Vec3Dd lightSource) {
+bool inShadow(const Vec3Dd intersection, const Vec3Dd lightDirection) {
+  bool interrupt  = false;
+  for (int t = 0; t < MyMesh.triangles.size(); t++) {
+    unsigned int triMat = MyMesh.triangleMaterials.at(t);
+    Material mat = MyMesh.materials.at(triMat);
     double depth = DBL_MAX;
-    bool interrupt  = false;
-    for (unsigned i = 0; i < MyMesh.triangles.size(); i++) {
-      unsigned int triMat = MyMesh.triangleMaterials.at(i);
-      Material mat = MyMesh.materials.at(triMat);
-      if (!(mat.name().find(REFRACTION_NAME) != std::string::npos)) { // Refraction
-
-        Triangle triangle = MyMesh.triangles.at(i);
-        Vec3Dd dir = lightVector(point, lightSource);
-        Vec3Dd offsetPoint = point + dir * 0.1;
-        Vec3Dd intersection = rayTriangleIntersect(offsetPoint, dir, triangle, depth);
-        if (!isNulVector(intersection) && i != j) {
-            interrupt = true;
-        }
+    if (!(mat.name().find(REFRACTION_NAME) != std::string::npos)) { // Refraction
+      
+      Triangle triangle = MyMesh.triangles.at(t);
+      Vec3Dd testIntersect = rayTriangleIntersect(intersection + lightDirection*0.01, lightDirection, triangle, depth);
+      if (!isNulVector(testIntersect)) {
+        interrupt = true;
       }
-    }
-    return interrupt;
+  }
+}
+  return interrupt;
 }
 
 Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex, const Vec3Dd N){
@@ -153,18 +136,38 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
   // loop for all lightpositions
   for (unsigned i = 0; i < MyLightPositions.size(); ++i) {
     Vec3Dd lightDirection = lightVector(intersection, MyLightPositions.at(i));
-    if(debug){
-      lightRayOrigins.push_back(intersection);
+    
+    // Check if intersects with object
+    // If so, be black.
+    
+    
+    
+    if(inShadow(intersection, lightDirection)){
+      if(debug)
+        printLine("We are in the shadow");
+    }
+    else {
+      if(debug){
+        lightRayOrigins.push_back(intersection);
+      }
+      
+      Vec3Dd diffuseColor = diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
+      if(debug){
+        printLine("diffuse");
+        printVector(diffuseColor);
+      }
+      Vec3Dd speculairColor = speculair(lightDirection.getNormalized(), viewDirection.getNormalized(), triangleIndex, N.getNormalized());
+      
+      if(debug){
+        printLine("diffuse");
+        printVector(speculairColor);
+      }
+      
+      //add it to the total
+      totalColor += clamp(diffuseColor + speculairColor);
+      
     }
     
-    
-    Vec3Dd color = Vec3Dd(0, 0, 0);
-
-    color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
-    color += speculair(lightDirection.getNormalized(), viewDirection.getNormalized(), triangleIndex, N.getNormalized());
-    
-    //add it to the total
-  	totalColor += clamp(color);
   }
   
   if (level < MAX_LEVEL) {
@@ -265,24 +268,24 @@ Vec3Dd ambient(int triangleIndex){
 
 Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int triangleIndex, const Vec3Dd N){
   
- // Vec3Dd reflection = reflectionVector(lightDirection, N);
+  Vec3Dd reflection = reflectionVector(lightDirection, N);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 	Vec3Dd color = MyMesh.materials.at(triMat).Ks();
 
-	/*Vec3Dd spec = color * pow(std::fmax(Vec3Dd::dotProduct(reflection, viewDirection), 0.0), 16);
-	return spec;*/
-	double specularTerm = 0;
-
-	// calculate specular reflection only if
-	// the surface is oriented to the light source
-	if (Vec3Dd::dotProduct(N, lightDirection) > 0)
-	{
-		// half vector
-		int shinyness = 4;
-		Vec3Dd H = (lightDirection + viewDirection).getNormalized();
-		specularTerm = pow(Vec3Dd::dotProduct(N, H), shinyness);
-	}
-		return color * specularTerm;
+	Vec3Dd spec = color * pow(std::fmax(Vec3Dd::dotProduct(reflection, viewDirection), 0.0), 16*2);
+	return spec;
+//	double specularTerm = 0;
+//
+//	// calculate specular reflection only if
+//	// the surface is oriented to the light source
+//	if (Vec3Dd::dotProduct(N, lightDirection) > 0)
+//	{
+//		// half vector
+//		int shinyness = 1;
+//		Vec3Dd H = (lightDirection + viewDirection).getNormalized();
+//		specularTerm = pow(Vec3Dd::dotProduct(N, H), shinyness);
+//	}
+//		return color * specularTerm;
 }
 
 
