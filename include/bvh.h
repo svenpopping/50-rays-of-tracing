@@ -104,8 +104,6 @@ public:
 							nodes.push_back(nn);
 							did_split = true;
 							didx = didy = didz = false;
-							//if (n.children.size() == 0)
-							//	nodes.erase(ni);
 							break;
 						}
 					}
