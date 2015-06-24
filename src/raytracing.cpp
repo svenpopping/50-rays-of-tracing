@@ -21,6 +21,9 @@
 Vec3Dd testColor;
 Vec3Dd backgroundColor = nullVector();
 
+Vec3Dd lastRayOrigin;
+Vec3Dd lastRayDestination;
+
 std::vector<Vec3Dd> rayOrigins;
 std::vector<Vec3Dd> rayIntersections;
 std::vector<Vec3Dd> rayColors;
@@ -475,7 +478,7 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
 	//here, as an example, I use the ray to fill in the values for my upper global ray variable
 	//I use these variables in the debugDraw function to draw the corresponding ray.
 	//try it: Press a key, move the camera, see the ray that was launched as a line.
-	
+
   switch (t) {
     case 'd':
       toggleDebug();
@@ -498,6 +501,12 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
       break;
     case 'l':
       MyLightPositions[selectedLight] = MyCameraPosition;
+      break;
+    case 'j':
+      if (debug) {
+        std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
+        performRayTracing(lastRayOrigin, ++lastRayDestination);
+      }
       break;
     case 'r':
       break;
