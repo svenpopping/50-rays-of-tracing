@@ -1,3 +1,3 @@
 CXX=clang++
 CXXFLAGS+=-Wno-deprecated
-LDFLAGS+=-framework OpenGL -framework GLUT
+LDFLAGS=-framework OpenGL -framework GLUT

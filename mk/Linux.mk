@@ -1,2 +1,2 @@
 CXX=g++
-LDFLAGS+=-lpthread -lGL -lGLU -lglut
+LDFLAGS=-lpthread -lGL -lGLU -lglut
