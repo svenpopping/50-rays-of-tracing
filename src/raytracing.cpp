@@ -208,14 +208,14 @@ Vec3Dd computeRefraction(const Vec3Dd dir, const Vec3Dd intersection, int level,
       
       if(cosI > EPSILON)
       {
-        n1 = 1.0f;
-        n2 = 1.0f;
+        n1 = 1.0;
+		n2 = material.Ni();
         normal = -normal;//invert
       }
       else
       {
         n1 = 1.0f;
-        n2 = 1.0f;
+		n2 = material.Ni();
         cosI = -cosI;
       }
       
