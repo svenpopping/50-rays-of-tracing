@@ -45,9 +45,8 @@ unsigned int WindowSize_Y = 800;  // resolution Y
 
 
 // helper variables for adaptive Anti-Aliasing.
-// SET EPSILON TO 0.001 FOR FINAL RENDER!
-#define EPSILON  0.05
-#define MAX_SAMPLES  5 
+#define EPSILON  0.0005
+#define MAX_SAMPLES  10
 
 // Worker threads.
 unsigned threads, wthreads = 0;
@@ -123,7 +122,7 @@ int main(int argc, char** argv)
     //initialize viewpoint
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glTranslatef(0,0,-4);
+    glTranslatef(0,-0.5,-2);
     tbInitTransform();     // This is for the trackball, please ignore
     tbHelp();             // idem
     MyCameraPosition=getCameraPosition();
@@ -449,7 +448,7 @@ bool compareColor(Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4) {
 */
 bool compareWithEpsilon(Vec3Dd vec1, Vec3Dd vec2) {
 	bool equal = false;
-	if ( abs(vec1[0] - vec2[0]) < EPSILON && abs(vec1[1] - vec2[1]) < EPSILON && abs(vec1[2] - vec2[2]) < EPSILON) {
+	if ( fabs(vec1[0] - vec2[0]) < EPSILON && fabs(vec1[1] - vec2[1]) < EPSILON && fabs(vec1[2] - vec2[2]) < EPSILON) {
 		equal = true;
 	}
 	return equal;

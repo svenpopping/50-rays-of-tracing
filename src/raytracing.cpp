@@ -16,7 +16,7 @@
 //temporary variables
 //these are only used to illustrate
 //a simple debug drawing. A ray
-#define MAX_LEVEL 15
+#define MAX_LEVEL 1
 #define EPSILON   0.001
 
 bvh<double, 4> hierarchy;
@@ -34,6 +34,7 @@ std::vector<Vec3Dd> rayColors;
 std::vector<Vec3Dd> lightRayOrigins;
 
 unsigned long selectedLight;
+bool selectAll;
 
 bool debug;
 
@@ -74,6 +75,27 @@ void init()
   }
 
   selectedLight = 0;
+  
+  // Lights
+  //
+  std::vector<int> indices;
+  for (unsigned int i = 0; i < MyMesh.triangles.size(); i++){
+    unsigned int triMat = MyMesh.triangleMaterials.at(i);
+    Material mat = MyMesh.materials.at(triMat);
+    if (mat.name().find(LIGHT_NAME) != std::string::npos) { // Reflection
+      Triangle triangle = MyMesh.triangles.at(i);
+      Vec3Dd v0 = MyMesh.vertices.at(triangle.v[0]).p;
+      Vec3Dd v1 = MyMesh.vertices.at(triangle.v[1]).p;
+      Vec3Dd v2 = MyMesh.vertices.at(triangle.v[2]).p;
+      MyLightPositions.push_back(v0);
+      MyLightPositions.push_back(v1);
+      MyLightPositions.push_back(v2);
+      indices.push_back(i);
+    }
+  }
+  for (unsigned int i = 0; i < indices.size(); i++){
+    MyMesh.triangles.erase(MyMesh.triangles.begin() + indices.at(i) - 1*i);
+  }
 }
 
 //return the color of your pixel.
@@ -107,7 +129,6 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
 
     if(intersectionFound){
       color = shade(dir, intersection, level, index, getNormalAtIntersection(intersection, MyMesh.triangles.at(index)));
-      
     }
   
   if(debug){
@@ -157,12 +178,16 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
   // loop for all lightpositions
   for (unsigned i = 0; i < MyLightPositions.size(); ++i) {
     Vec3Dd lightDirection = lightVector(intersection, MyLightPositions.at(i));
+    if(debug){
+      lightRayOrigins.push_back(intersection);
+    }
+    Vec3Dd color = Vec3Dd(0, 0, 0);
+
+    color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
+    color += speculair(lightDirection.getNormalized(), viewDirection.getNormalized(), triangleIndex, N.getNormalized());
     
     // Check if intersects with object
     // If so, be black.
-    
-    
-    
     if(inShadow(intersection, lightDirection)){
       if(debug)
         printLine("We are in the shadow");
@@ -197,12 +222,12 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
       if(debug)
         std::cout << "Reflecting..." << mat.name() << std::endl;
       
-      totalColor = totalColor * (1 - mat.Tr()) + computeReflectionVector(viewDirection, intersection, N.getNormalized(), level) * (mat.Tr());
+      totalColor = totalColor * (1 - mat.Tr()) + computeReflectionVector(viewDirection.getNormalized(), intersection, N.getNormalized(), level) * (mat.Tr());
     }
     if (mat.name().find(REFRACTION_NAME) != std::string::npos) { // Refraction
       if(debug)
         std::cout << "Refracting..." << std::endl;
-      totalColor = totalColor * mat.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - mat.Tr());
+      totalColor = totalColor * mat.Tr() + computeRefraction(dir.getNormalized(), intersection, level, triangleIndex) * (1 - mat.Tr());
     }
   }
 
@@ -222,14 +247,14 @@ Vec3Dd computeRefraction(const Vec3Dd dir, const Vec3Dd intersection, int level,
       
       if(cosI > EPSILON)
       {
-        n1 = 1.0f;
-        n2 = 1.0f;
+        n1 = 1.0;
+		n2 = material.Ni();
         normal = -normal;//invert
       }
       else
       {
         n1 = 1.0f;
-        n2 = 1.0f;
+		n2 = material.Ni();
         cosI = -cosI;
       }
       
@@ -293,32 +318,32 @@ Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int tr
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 	Vec3Dd color = MyMesh.materials.at(triMat).Ks();
 
-	Vec3Dd spec = color * pow(std::fmax(Vec3Dd::dotProduct(reflection, viewDirection), 0.0), 16*2);
-	return spec;
-//	double specularTerm = 0;
-//
-//	// calculate specular reflection only if
-//	// the surface is oriented to the light source
-//	if (Vec3Dd::dotProduct(N, lightDirection) > 0)
-//	{
-//		// half vector
-//		int shinyness = 1;
-//		Vec3Dd H = (lightDirection + viewDirection).getNormalized();
-//		specularTerm = pow(Vec3Dd::dotProduct(N, H), shinyness);
-//	}
-//		return color * specularTerm;
+	/*Vec3Dd spec = color * pow(std::fmax(Vec3Dd::dotProduct(reflection, viewDirection), 0.0), 16);
+	return spec;*/
+	double specularTerm = 0;
+
+	// calculate specular reflection only if
+	// the surface is oriented to the light source
+	if (Vec3Dd::dotProduct(N, lightDirection) > 0)
+	{
+		// half vector
+		int shinyness = 20;
+		Vec3Dd H = (lightDirection + viewDirection).getNormalized();
+		specularTerm = pow(Vec3Dd::dotProduct(N, H), shinyness);
+	}
+		return color * specularTerm;
 }
 
 
 Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint){
     Vec3Dd lightDir = Vec3Dd(0, 0, 0);
-    lightDir = lightPoint - point;
+	lightDir.fromTo(point, lightPoint);
     return lightDir;
 }
 
 Vec3Dd reflectionVector(const Vec3Dd lightDirection, const Vec3Dd normalVector) {
     Vec3Dd reflection = Vec3Dd(0, 0, 0);
-    reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
+    reflection = lightDirection - 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector;
     return reflection;
 }
 // We can also add textures!
@@ -437,7 +462,7 @@ void yourDebugDraw()
     glPointSize(10);
     glBegin(GL_POINTS);
   for (unsigned i = 0; i<MyLightPositions.size(); ++i){
-      if(i == selectedLight)
+      if(i == selectedLight || selectAll)
         glColor3dv(getSunColor().p);
       else
         glColor3d(1, 1, 1);
@@ -469,17 +494,26 @@ void yourDebugDraw()
         }
       glLineWidth(0.5);
       for(int i = 0; i < lightRayOrigins.size(); i++){
-        Vec3Dd color = getSunColor();
-        Vec3Dd origin = lightRayOrigins.at(i);
-        Vec3Dd intersection = MyLightPositions.at(selectedLight);
+        std::vector<Vec3Dd> lightSources;
+        if(selectAll){
+          lightSources = MyLightPositions;
+        } else {
+          lightSources.push_back(MyLightPositions.at(selectedLight));
+        }
         
-        glBegin(GL_LINES);
-
-        glColor3d(color[0], color[1], color[2]);
-        glVertex3d(origin[0], origin[1], origin[2]);
-        glColor3d(color[0], color[1], color[2]);
-        glVertex3d(intersection[0], intersection[1], intersection[2]);
-        glEnd();
+        for (int j = 0; j < lightSources.size(); j++) {
+          Vec3Dd color = getSunColor();
+          Vec3Dd origin = lightRayOrigins.at(i);
+          Vec3Dd intersection = lightSources.at(j);
+          glBegin(GL_LINES);
+          
+          glColor3d(color[0], color[1], color[2]);
+          glVertex3d(origin[0], origin[1], origin[2]);
+          glColor3d(color[0], color[1], color[2]);
+          glVertex3d(intersection[0], intersection[1], intersection[2]);
+          glEnd();
+        }
+        
       }
     }
   
@@ -548,6 +582,9 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
       break;
     case 'r':
       break;
+    case 'V':
+      toggleSelectAll();
+      break;
       
     // case any number
       // Set light intensity of last light source
@@ -613,6 +650,10 @@ void clearDebugVector(){
 
 void toggleDebug(){
     debug = !debug;
+}
+
+void toggleSelectAll(){
+  selectAll = !selectAll;
 }
 
 void toggleFillColor(){
