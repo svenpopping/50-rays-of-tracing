@@ -300,6 +300,7 @@ Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint){
     return lightDir;
 }
 
+// Computes a reflected vector.
 Vec3Dd reflectionVector(const Vec3Dd lightDirection, const Vec3Dd normalVector) {
     Vec3Dd reflection = Vec3Dd(0, 0, 0);
     reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
@@ -308,14 +309,14 @@ Vec3Dd reflectionVector(const Vec3Dd lightDirection, const Vec3Dd normalVector) 
 // We can also add textures!
 
 
+// Computes the reflectionVector
 Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersection, const Vec3Dd normalVector, int level) {
     //    Vec3Dd reflection = (2 * Vec3Dd::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
-    Vec3Dd reflection = (2 * Vec3Dd::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
-    // Vec3Dd reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
-    
+     Vec3Dd reflection = reflectionVector(viewDirection, normalVector)
     return trace(intersection +reflection.getNormalized()*0.01, reflection.getNormalized(), level);
 }
-// We can also add textures!
+
+
 
 // The source of this function is:
 // http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
@@ -373,93 +374,94 @@ Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangl
     return P; // this is the intersectionpoint
 }
 
-//Shade(level, hit, &color){
-//  for each lightsource
-//    ComputeDirectLight(hit, &directColor);
-//  if(material reflects && (level < maxLevel))
-//    computeReflectedRay(hit, &reflectedray);
-//    Trace(level+1, reflectedRay, &reflectedColor);
-//  color = directColor + reflection * reflectedcolor + transmission * refractedColor;
-//}
-
-
-
+// We draw all rays used for calculating the colors, if we are in debug mode.
 void yourDebugDraw()
 {
-    //draw open gl debug stuff
-    //this function is called every frame
-    
-    //let's draw the mesh
-    MyMesh.draw();
-    
-    //let's draw the lights in the scene as points
-    glPushAttrib(GL_ALL_ATTRIB_BITS); //store all GL attributes
-    glDisable(GL_LIGHTING);
-    glPointSize(10);
-    glBegin(GL_POINTS);
+  //draw open gl debug stuff
+  //this function is called every frame
+  
+  //let's draw the mesh
+  MyMesh.draw();
+  
+  //let's draw the lights in the scene as points
+  glPushAttrib(GL_ALL_ATTRIB_BITS); //store all GL attributes
+  glDisable(GL_LIGHTING);
+  glPointSize(10);
+  glBegin(GL_POINTS);
+  
+  // Loop over all the lights in the scene
   for (unsigned i = 0; i<MyLightPositions.size(); ++i){
-      if(i == selectedLight || selectAll)
-        glColor3dv(getSunColor().p);
-      else
-        glColor3d(1, 1, 1);
-      glVertex3dv(MyLightPositions[i].pointer());
-  }
-    glEnd();
-  
-    //Show rays
-    glLineWidth(2.5);
-    glPointSize(5);
-    if(debug){
-        for (int i = 1; i < rayColors.size(); i++) {
-            Vec3Dd color = rayColors.at(i);
-            Vec3Dd origin = rayOrigins.at(i);
-            Vec3Dd intersection = rayIntersections.at(i);
-          
-          
-            glBegin(GL_LINES);
-            glColor3d(color[0], color[1], color[2]);
-            glVertex3d(origin[0], origin[1], origin[2]);
-            glColor3d(color[0], color[1], color[2]);
-            glVertex3d(intersection[0], intersection[1], intersection[2]);
-            glEnd();
-            
-
-            glBegin(GL_POINTS);
-            glVertex3dv(intersection.pointer());
-            glEnd();
-        }
-      glLineWidth(0.5);
-      for(int i = 0; i < lightRayOrigins.size(); i++){
-        std::vector<Vec3Dd> lightSources;
-        if(selectAll){
-          lightSources = MyLightPositions;
-        } else {
-          lightSources.push_back(MyLightPositions.at(selectedLight));
-        }
-        
-        for (int j = 0; j < lightSources.size(); j++) {
-          Vec3Dd color = getSunColor();
-          Vec3Dd origin = lightRayOrigins.at(i);
-          Vec3Dd intersection = lightSources.at(j);
-          glBegin(GL_LINES);
-          
-          glColor3d(color[0], color[1], color[2]);
-          glVertex3d(origin[0], origin[1], origin[2]);
-          glColor3d(color[0], color[1], color[2]);
-          glVertex3d(intersection[0], intersection[1], intersection[2]);
-          glEnd();
-        }
-        
-      }
+    // If the light is the selected one
+    // Or if we selected all the lights
+    if(i == selectedLight || selectAll){
+      // Make the color different
+      glColor3dv(getSunColor().p);
     }
+    else{
+      // Else just white
+      glColor3d(1, 1, 1);
+    }
+    glVertex3dv(MyLightPositions[i].pointer());
+  }
+  glEnd();
   
+  // Shows the normal rays,
+  // Only if we are in debug modus.
+  glLineWidth(3);
+  glPointSize(6);
+  if(debug){
+    // Loop trough all the reays we have
+    for (int i = 1; i < rayColors.size(); i++) {
+      Vec3Dd color = rayColors.at(i); // Get the color
+      Vec3Dd origin = rayOrigins.at(i); // The origin
+      Vec3Dd intersection = rayIntersections.at(i); // And the "ending"
+      
+      
+      // Make the lines
+      glBegin(GL_LINES);
+      glColor3d(color[0], color[1], color[2]);
+      glVertex3d(origin[0], origin[1], origin[2]);
+      glColor3d(color[0], color[1], color[2]);
+      glVertex3d(intersection[0], intersection[1], intersection[2]);
+      glEnd();
+      
+      // Show the bigger points on the intersectionspot, to show color
+      glBegin(GL_POINTS);
+      glVertex3dv(intersection.pointer());
+      glEnd();
+    }
     
-    //draw whatever else you want...
-    ////glutSolidSphere(1,10,10);
-    ////allows you to draw a sphere at the origin.
-    ////using a glTranslate, it can be shifted to whereever you want
-    ////if you produce a sphere renderer, this
-    ////triangulated sphere is nice for the preview
+    // Show all light origins
+    // Because they are less important,
+    // Show them smaller
+    glLineWidth(0.5);
+    // Loop trough all intersectionpoints
+    for(int i = 0; i < lightRayOrigins.size(); i++){
+      std::vector<Vec3Dd> lightSources;
+      // If we selected all the lights
+      // Loop through all lightsources
+      if(selectAll){
+        lightSources = MyLightPositions;
+      } else { // Else only through the selected light
+        lightSources.push_back(MyLightPositions.at(selectedLight));
+      }
+      
+      for (int j = 0; j < lightSources.size(); j++) {
+        Vec3Dd color = getSunColor(); // Use the sunny color
+        Vec3Dd origin = lightRayOrigins.at(i); // The intersectionpoint to start the ray
+        Vec3Dd intersection = lightSources.at(j); // The point of light where the ray should go
+        glBegin(GL_LINES);
+        
+        // Make the ray in OpenGL
+        glColor3d(color[0], color[1], color[2]);
+        glVertex3d(origin[0], origin[1], origin[2]);
+        glColor3d(color[0], color[1], color[2]);
+        glVertex3d(intersection[0], intersection[1], intersection[2]);
+        glEnd();
+      }
+      
+    }
+  }
 }
 
 
@@ -481,18 +483,14 @@ void yourDebugDraw()
 //    this function and raytracing is in place, it might take a
 //    while to complete...
 
-// 'd' Toggles the debug mode
-// 't' Toggles the debug view
-// 'c' Adds the option to clear the debugvectors
-// 'b' changes the background color
-// 'v' Changes the selection of light and goes to the view
+// 'd' Toggles the debug mode. The debug mode is needed to see std::cout
+// 't' Toggles the view from GL_LINE and GL_FILL
+// 'c' Adds the option to clear all rays
+// 'b' Changes the background color from black to white.
+// 'v' Selects another light source
+// 'V' Selects all lights
 
 void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination){
-
-	//here, as an example, I use the ray to fill in the values for my upper global ray variable
-	//I use these variables in the debugDraw function to draw the corresponding ray.
-	//try it: Press a key, move the camera, see the ray that was launched as a line.
-  
   switch (t) {
     case 'd':
       toggleDebug();
@@ -522,17 +520,11 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
       toggleSelectAll();
       break;
       
-    // case any number
-      // Set light intensity of last light source
     default:
       if(debug){
         performRayTracing(rayOrigin, rayDestination);
         lastRayOrigin = rayOrigin;
         lastRayDestination = rayDestination;
-        // std::cout << " The color from the ray is: ";
-        //printVector(testColor);
-        // std::cout << std::endl;
-        // std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
       }
       break;
   }
@@ -612,35 +604,4 @@ void toggleBackgroundColor(){
   glClear(GL_COLOR_BUFFER_BIT);
   glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], 1);
 }
-
-
-// Pseudocode From slides
-
-//RayTrace (view)
-//{
-//  for (y=0; y<view.yres; ++y){
-//    for(x=0; x<view.xres; ++x){
-//      ComputeRay(x, y, view, &ray);
-//      Trace(0, ray, &color);
-//      PutPixel(x, y, color);
-//    }
-//  }
-//}
-//
-//Trace( level, ray, &color){
-//  if(intersect(level, ray, max, &hit)) {
-//    Shade(level, hit, &color);
-//  }
-//  else
-//    color=BackgroundColor
-//}
-//
-//Shade(level, hit, &color){
-//  for each lightsource
-//    ComputeDirectLight(hit, &directColor);
-//  if(material reflects && (level < maxLevel))
-//    computeReflectedRay(hit, &reflectedray);
-//    Trace(level+1, reflectedRay, &reflectedColor);
-//  color = directColor + reflection * reflectedcolor + transmission * refractedColor;
-//}
 
