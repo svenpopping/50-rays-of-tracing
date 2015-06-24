@@ -72,6 +72,7 @@ void animate()
 void display(void);
 void reshape(int w, int h);
 void keyboard(unsigned char key, int x, int y);
+void specialKeyboard(int key, int x, int y);
 void startRaytracing();
 void doThreadTrace(Image &result, Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11, int id, unsigned minY, unsigned maxY);
 Vec3Dd calculateCorners(Vec3Dd &origin00, Vec3Dd &dest00, Vec3Dd &origin01, Vec3Dd &dest01, Vec3Dd &origin10, Vec3Dd &dest10, Vec3Dd &origin11, Vec3Dd &dest11,
@@ -153,6 +154,7 @@ int main(int argc, char** argv)
     // glut setup... to ignore
     glutReshapeFunc(reshape);
     glutKeyboardFunc(keyboard);
+    glutSpecialFunc(specialKeyboard);
     glutDisplayFunc(display);
     glutMouseFunc(tbMouseFunc);    // trackball
     glutMotionFunc(tbMotionFunc);  // uses mouse
@@ -259,6 +261,15 @@ void keyboard(unsigned char key, int x, int y)
 	produceRay(x, y, &testRayOrigin, &testRayDestination);
 
 	yourKeyboardFunc(key,x,y, testRayOrigin, testRayDestination);
+}
+
+void specialKeyboard(int key, int x, int y)
+{
+  //produce the ray for the current mouse position
+  Vec3Dd testRayOrigin, testRayDestination;
+  produceRay(x, y, &testRayOrigin, &testRayDestination);
+
+  yourSpecialKeyboardFunc(key,x,y, testRayOrigin, testRayDestination);
 }
 
 

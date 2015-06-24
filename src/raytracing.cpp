@@ -23,6 +23,7 @@ Vec3Dd backgroundColor = nullVector();
 
 Vec3Dd lastRayOrigin;
 Vec3Dd lastRayDestination;
+Vec3Dd newRayDestination;
 
 std::vector<Vec3Dd> rayOrigins;
 std::vector<Vec3Dd> rayIntersections;
@@ -478,7 +479,7 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
 	//here, as an example, I use the ray to fill in the values for my upper global ray variable
 	//I use these variables in the debugDraw function to draw the corresponding ray.
 	//try it: Press a key, move the camera, see the ray that was launched as a line.
-
+  
   switch (t) {
     case 'd':
       toggleDebug();
@@ -502,12 +503,6 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
     case 'l':
       MyLightPositions[selectedLight] = MyCameraPosition;
       break;
-    case 'j':
-      if (debug) {
-        std::cout << t << " pressed! The mouse was in location " << x << "," << y << "!" << std::endl;
-        performRayTracing(lastRayOrigin, ++lastRayDestination);
-      }
-      break;
     case 'r':
       break;
       
@@ -516,6 +511,8 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
     default:
       if(debug){
         performRayTracing(rayOrigin, rayDestination);
+        lastRayOrigin = rayOrigin;
+        lastRayDestination = rayDestination;
         // std::cout << " The color from the ray is: ";
         //printVector(testColor);
         // std::cout << std::endl;
@@ -523,10 +520,44 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
       }
       break;
   }
+}
+
+void yourSpecialKeyboardFunc(int t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination){
+
+  //here, as an example, I use the ray to fill in the values for my upper global ray variable
+  //I use these variables in the debugDraw function to draw the corresponding ray.
+  //try it: Press a key, move the camera, see the ray that was launched as a line.
   
-  printLine("We are done!");
+  std::cout << "Pressed the key: " << t << std::endl;
 
-
+  if (debug) {
+    switch (t) {
+      case 100:
+        // left
+        newRayDestination = lastRayDestination - Vec3Dd(0.05, 0, 0);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+      case 101:
+        // up
+        newRayDestination = lastRayDestination - Vec3Dd(0, 0, 0.05);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+      case 102:
+        // right
+        newRayDestination = lastRayDestination + Vec3Dd(0.05, 0, 0);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+      case 103:
+        // down
+        newRayDestination = lastRayDestination + Vec3Dd(0, 0, 0.05);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+    }
+  }
 }
 
 

@@ -38,6 +38,7 @@ void yourDebugDraw();
 
 //want keyboard interaction? Here it is...
 void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination);
+void yourSpecialKeyboardFunc(int t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination);
 void clearDebugVector();
 void toggleDebug();
 void toggleFillColor();
