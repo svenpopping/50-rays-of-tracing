@@ -105,6 +105,10 @@ void print(std::string string){
   std::cout << string;
 }
 
+Vec3Dd getSunColor(){
+  return Vec3Dd(0.992156863, 0.721568627, 0.074509804);
+}
+
 unsigned getThreadCount(void)
 {
 #if __linux__ || (__APPLE__ && __MACH__)
