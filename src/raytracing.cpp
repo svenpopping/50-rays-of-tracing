@@ -23,9 +23,17 @@ bvh<double, 4> hierarchy;
 Vec3Dd testColor;
 Vec3Dd backgroundColor = nullVector();
 
+Vec3Dd lastRayOrigin;
+Vec3Dd lastRayDestination;
+Vec3Dd newRayDestination;
+
 std::vector<Vec3Dd> rayOrigins;
 std::vector<Vec3Dd> rayIntersections;
 std::vector<Vec3Dd> rayColors;
+
+std::vector<Vec3Dd> lightRayOrigins;
+
+unsigned long selectedLight;
 
 bool debug;
 
@@ -65,6 +73,7 @@ void init()
     }
   }
 
+  selectedLight = 0;
 }
 
 //return the color of your pixel.
@@ -97,9 +106,7 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     }
 
     if(intersectionFound){
-      double ShadowScalar = 1.0 - ShadowPercentage(intersection, index);
       color = shade(dir, intersection, level, index, getNormalAtIntersection(intersection, MyMesh.triangles.at(index)));
-      color = color*ShadowScalar;
       
     }
   
@@ -117,35 +124,24 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     return color;
 }
 
-double ShadowPercentage(const Vec3Dd point, int j) {
-    unsigned Lightpoints = MyLightPositions.size();
-    double shadows = 0.0;
-    for (unsigned i = 0; i < Lightpoints; i++) {
-        if (inShadow(point, j, MyLightPositions.at(i))) {
-            shadows++;
-        }
-    }
-    //std::cout << Lightpoints;
-    shadows = shadows/Lightpoints;
-    return shadows;
-}
 
-
-bool inShadow(const Vec3Dd point, unsigned j, const Vec3Dd lightSource) {
+bool inShadow(const Vec3Dd intersection, const Vec3Dd lightDirection) {
+  bool interrupt  = false;
+  for (int t = 0; t < MyMesh.triangles.size(); t++) {
+    unsigned int triMat = MyMesh.triangleMaterials.at(t);
+    Material mat = MyMesh.materials.at(triMat);
     double depth = DBL_MAX;
-    bool interrupt  = false;
-    for (unsigned i = 0; i < MyMesh.triangles.size(); i++) {
-        Triangle triangle = MyMesh.triangles.at(i);
-        Vec3Dd dir = lightVector(point, lightSource);
-        Vec3Dd offsetPoint = point + dir * 0.1;
-        Vec3Dd intersection = rayTriangleIntersect(offsetPoint, dir, triangle, depth);
-        if (!isNulVector(intersection) && i != j) {
-            interrupt = true;
-        }
-    }
-    return interrupt;
+    if (!(mat.name().find(REFRACTION_NAME) != std::string::npos)) { // Refraction
+      
+      Triangle triangle = MyMesh.triangles.at(t);
+      Vec3Dd testIntersect = rayTriangleIntersect(intersection + lightDirection*0.01, lightDirection, triangle, depth);
+      if (!isNulVector(testIntersect)) {
+        interrupt = true;
+      }
+  }
 }
-
+  return interrupt;
+}
 
 Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex, const Vec3Dd N){
 
@@ -161,14 +157,38 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
   // loop for all lightpositions
   for (unsigned i = 0; i < MyLightPositions.size(); ++i) {
     Vec3Dd lightDirection = lightVector(intersection, MyLightPositions.at(i));
-
-    Vec3Dd color = Vec3Dd(0, 0, 0);
-
-    color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
-    color += speculair(lightDirection.getNormalized(), viewDirection.getNormalized(), triangleIndex, N.getNormalized());
     
-    //add it to the total
-  	totalColor += clamp(color);
+    // Check if intersects with object
+    // If so, be black.
+    
+    
+    
+    if(inShadow(intersection, lightDirection)){
+      if(debug)
+        printLine("We are in the shadow");
+    }
+    else {
+      if(debug){
+        lightRayOrigins.push_back(intersection);
+      }
+      
+      Vec3Dd diffuseColor = diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
+      if(debug){
+        printLine("diffuse");
+        printVector(diffuseColor);
+      }
+      Vec3Dd speculairColor = speculair(lightDirection.getNormalized(), viewDirection.getNormalized(), triangleIndex, N.getNormalized());
+      
+      if(debug){
+        printLine("diffuse");
+        printVector(speculairColor);
+      }
+      
+      //add it to the total
+      totalColor += clamp(diffuseColor + speculairColor);
+      
+    }
+    
   }
   
   if (level < MAX_LEVEL) {
@@ -268,15 +288,25 @@ Vec3Dd ambient(int triangleIndex){
 
 
 Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int triangleIndex, const Vec3Dd N){
-  Vec3Dd lightN = lightDirection / lightDirection.getLength();
   
-  Vec3Dd reflection = reflectionVector(lightN, N);
-	Vec3Dd color = Vec3Dd(0, 0, 0);
+  Vec3Dd reflection = reflectionVector(lightDirection, N);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
-	color = MyMesh.materials.at(triMat).Ks();
-	Vec3Dd spec = color * pow(std::fmax(Vec3Dd::dotProduct(reflection, viewDirection), 0.0), 16);
-	return spec;
+	Vec3Dd color = MyMesh.materials.at(triMat).Ks();
 
+	Vec3Dd spec = color * pow(std::fmax(Vec3Dd::dotProduct(reflection, viewDirection), 0.0), 16*2);
+	return spec;
+//	double specularTerm = 0;
+//
+//	// calculate specular reflection only if
+//	// the surface is oriented to the light source
+//	if (Vec3Dd::dotProduct(N, lightDirection) > 0)
+//	{
+//		// half vector
+//		int shinyness = 1;
+//		Vec3Dd H = (lightDirection + viewDirection).getNormalized();
+//		specularTerm = pow(Vec3Dd::dotProduct(N, H), shinyness);
+//	}
+//		return color * specularTerm;
 }
 
 
@@ -404,20 +434,27 @@ void yourDebugDraw()
     //let's draw the lights in the scene as points
     glPushAttrib(GL_ALL_ATTRIB_BITS); //store all GL attributes
     glDisable(GL_LIGHTING);
-    glColor3d(1, 1, 1);
     glPointSize(10);
     glBegin(GL_POINTS);
-    for (unsigned i = 0; i<MyLightPositions.size(); ++i)
-        glVertex3dv(MyLightPositions[i].pointer());
-  glEnd();
+  for (unsigned i = 0; i<MyLightPositions.size(); ++i){
+      if(i == selectedLight)
+        glColor3dv(getSunColor().p);
+      else
+        glColor3d(1, 1, 1);
+      glVertex3dv(MyLightPositions[i].pointer());
+  }
+    glEnd();
   
     //Show rays
+    glLineWidth(2.5);
+    glPointSize(5);
     if(debug){
-        for (unsigned i = 0; i != rayColors.size(); i++) {
+        for (int i = 1; i < rayColors.size(); i++) {
             Vec3Dd color = rayColors.at(i);
             Vec3Dd origin = rayOrigins.at(i);
             Vec3Dd intersection = rayIntersections.at(i);
-            
+          
+          
             glBegin(GL_LINES);
             glColor3d(color[0], color[1], color[2]);
             glVertex3d(origin[0], origin[1], origin[2]);
@@ -425,20 +462,26 @@ void yourDebugDraw()
             glVertex3d(intersection[0], intersection[1], intersection[2]);
             glEnd();
             
-            glPointSize(3);
+
             glBegin(GL_POINTS);
             glVertex3dv(intersection.pointer());
             glEnd();
         }
+      glLineWidth(0.5);
+      for(int i = 0; i < lightRayOrigins.size(); i++){
+        Vec3Dd color = getSunColor();
+        Vec3Dd origin = lightRayOrigins.at(i);
+        Vec3Dd intersection = MyLightPositions.at(selectedLight);
+        
+        glBegin(GL_LINES);
+
+        glColor3d(color[0], color[1], color[2]);
+        glVertex3d(origin[0], origin[1], origin[2]);
+        glColor3d(color[0], color[1], color[2]);
+        glVertex3d(intersection[0], intersection[1], intersection[2]);
+        glEnd();
+      }
     }
-    
-    
-    // Show light positions
-    glPointSize(10);
-    glBegin(GL_POINTS);
-    glVertex3dv(MyLightPositions[0].pointer());
-    glEnd();
-    glPopAttrib();
   
     
     //draw whatever else you want...
@@ -472,13 +515,14 @@ void yourDebugDraw()
 // 't' Toggles the debug view
 // 'c' Adds the option to clear the debugvectors
 // 'b' changes the background color
+// 'v' Changes the selection of light and goes to the view
 
 void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination){
 
 	//here, as an example, I use the ray to fill in the values for my upper global ray variable
 	//I use these variables in the debugDraw function to draw the corresponding ray.
 	//try it: Press a key, move the camera, see the ray that was launched as a line.
-	
+  
   switch (t) {
     case 'd':
       toggleDebug();
@@ -492,12 +536,26 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
     case 'b':
       toggleBackgroundColor();
       break;
+    case 'v':
+      selectedLight = (selectedLight+1) % (MyLightPositions.size());
+      break;
+    case 'L':
+      MyLightPositions.push_back(MyCameraPosition);
+      selectedLight = MyLightPositions.size()-1;
+      break;
+    case 'l':
+      MyLightPositions[selectedLight] = MyCameraPosition;
+      break;
+    case 'r':
+      break;
       
     // case any number
       // Set light intensity of last light source
     default:
       if(debug){
         performRayTracing(rayOrigin, rayDestination);
+        lastRayOrigin = rayOrigin;
+        lastRayDestination = rayDestination;
         // std::cout << " The color from the ray is: ";
         //printVector(testColor);
         // std::cout << std::endl;
@@ -505,10 +563,44 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
       }
       break;
   }
+}
+
+void yourSpecialKeyboardFunc(int t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination){
+
+  //here, as an example, I use the ray to fill in the values for my upper global ray variable
+  //I use these variables in the debugDraw function to draw the corresponding ray.
+  //try it: Press a key, move the camera, see the ray that was launched as a line.
   
-  printLine("We are done!");
+  std::cout << "Pressed the key: " << t << std::endl;
 
-
+  if (debug) {
+    switch (t) {
+      case 100:
+        // left
+        newRayDestination = lastRayDestination - Vec3Dd(0.05, 0, 0);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+      case 101:
+        // up
+        newRayDestination = lastRayDestination - Vec3Dd(0, 0, 0.05);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+      case 102:
+        // right
+        newRayDestination = lastRayDestination + Vec3Dd(0.05, 0, 0);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+      case 103:
+        // down
+        newRayDestination = lastRayDestination + Vec3Dd(0, 0, 0.05);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+    }
+  }
 }
 
 
@@ -516,6 +608,7 @@ void clearDebugVector(){
     rayOrigins.clear();
     rayIntersections.clear();
     rayColors.clear();
+  lightRayOrigins.clear();
 }
 
 void toggleDebug(){
@@ -534,13 +627,13 @@ void toggleFillColor(){
 }
 
 void toggleBackgroundColor(){
-  glClear(GL_COLOR_BUFFER_BIT);
-  glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], 1);
   
   backgroundColor = backgroundColor + Vec3Dd(0.2,0.2,0.2);
   if(backgroundColor[0] > 1){
     backgroundColor = nullVector();
   }
+  glClear(GL_COLOR_BUFFER_BIT);
+  glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], 1);
 }
 
 

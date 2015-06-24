@@ -32,6 +32,8 @@ Vec3Dd getNormal(Triangle triangle);
 
 Vec3Dd getNormalAtIntersection(Vec3Dd intersection, Triangle triangle);
 
+Vec3Dd getSunColor();
+
 unsigned getThreadCount(void);
 
 #endif

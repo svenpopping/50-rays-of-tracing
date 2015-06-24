@@ -83,6 +83,9 @@ public:
     // ---------
     // Operators
     // ---------
+    Vec3D& operator++();
+    Vec3D& operator--();
+    
     inline T& operator[] (int Index) {
         return (p[Index]);
     };
@@ -101,6 +104,7 @@ public:
         p[2] += P[2];
         return (*this);
     };
+
     inline Vec3D& operator-= (const Vec3D & P) {
         p[0] -= P[0];
         p[1] -= P[1];
@@ -290,6 +294,17 @@ template <class T> inline Vec3D<T> swap (Vec3D<T> & P, Vec3D<T> & Q) {
     P = Q;
     Q = tmp;
 }
+
+
+
+template <class T> Vec3D<T> & Vec3D<T>::operator++ () {
+    p[0]++; p[1]++; p[2]++;
+    return (*this);
+};
+template <class T> Vec3D<T> & Vec3D<T>::operator-- () {
+    p[0]--; p[1]--; p[2]--;
+    return (*this);
+};
 
 template <class T> std::ostream & operator<< (std::ostream & output, const Vec3D<T> & v) {
     output << v[0] << " " << v[1] << " " << v[2];
