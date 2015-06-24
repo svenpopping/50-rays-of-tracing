@@ -9,6 +9,6 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Bump /Users/svenpopping/Dump/50_rays_of_tracing/50_rays_of_tracing/models/box_simple.bmp
-map_Kd /Users/svenpopping/Dump/50_rays_of_tracing/50_rays_of_tracing/models/box_simple.bmp
-map_Ns /Users/svenpopping/Dump/50_rays_of_tracing/50_rays_of_tracing/models/box_simple.bmp
+map_Bump /Users/jeroen/Raytracing/Raytracing/models/box_simple.bmp
+map_Kd /Users/jeroen/Raytracing/Raytracing/models/box_simple.bmp
+map_Ns /Users/jeroen/Raytracing/Raytracing/models/box_simple.bmp

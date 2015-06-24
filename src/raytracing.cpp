@@ -50,8 +50,9 @@ void init()
     //here, we set it to the current location of the camera
   MyLightPositions.push_back(MyCameraPosition);
   
-  
-  read_bmp_file(MyMesh.materials.at(1).textureName().c_str());
+  if (!(MyMesh.materials.at(1).textureName().empty())) {
+    read_bmp_file(MyMesh.materials.at(1).textureName().c_str());
+  }
 }
 
 //return the color of your pixel.
@@ -272,7 +273,6 @@ Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int tr
 
 }
 
-
 Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint){
     Vec3Dd lightDir = Vec3Dd(0, 0, 0);
     lightDir = lightPoint - point;
@@ -284,8 +284,6 @@ Vec3Dd reflectionVector(const Vec3Dd lightDirection, const Vec3Dd normalVector) 
     reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
     return reflection;
 }
-// We can also add textures!
-
 
 Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersection, const Vec3Dd normalVector, int level) {
     //    Vec3Dd reflection = (2 * Vec3Dd::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
@@ -294,48 +292,58 @@ Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersec
     
     return trace(intersection +reflection.getNormalized()*0.01, reflection.getNormalized(), level);
 }
-// We can also add textures!
 
+// We can also add textures!
 Vec3Dd getTextureColor(const std::string textureName, const Triangle triangle) {
-  Vec3Dd ding = Vec3Dd(textureData[(triangle.t[0] * 3 * textureWidth + 3 * triangle.t[1])]/255.0,
-                         textureData[(triangle.t[0] * 3 * textureWidth + 3*triangle.t[1]+1)]/255.0,
-                       textureData[(triangle.t[0] * 3 * textureWidth + 3*triangle.t[1]+2)]/255.0);
-  
-  return ding;
+  int R = (int)textureData[(triangle.t[0] * 3 * textureWidth + 3 * triangle.t[1])];
+  int G = (int)textureData[(triangle.t[0] * 3 * textureWidth + 3 * triangle.t[1]+1)];
+  int B = (int)textureData[(triangle.t[0] * 3 * textureWidth + 3 * triangle.t[1]+2)];
+
+  return Vec3Dd(R/255.0, G/255.0, B/255.0);
 }
 
 void read_bmp_file(const char* filename)
 {
   int i;
   FILE* f = fopen(filename, "rb");
-  unsigned char info[54];
-  fread(info, sizeof(unsigned char), 54, f); // read the 54-byte header
+  unsigned char header[54];
+  fread(header, sizeof(unsigned char), 54, f); // read the 54-byte header
   
   // extract image height and width from header
-  textureWidth = *(int*)&info[18];
-  textureHeight = *(int*)&info[22];
+  textureWidth = *(int*)&header[18];
+  textureHeight = *(int*)&header[22];
+
+  std::cout << "Filename: " << filename << std::endl;
+  std::cout << "textureWidth: " << textureWidth << std::endl;
+  std::cout << "textureHeight: " << textureHeight << std::endl;
   
-  int size = 3 * textureWidth * textureHeight;
-  textureData = new unsigned char[size]; // allocate 3 bytes per pixel
-  fread(textureData, sizeof(unsigned char), size, f); // read the rest of the data at once
-  fclose(f);
-  
-  for(i = 0; i < size; i += 3)
+  int paddedRow = (textureWidth*3 + 3) & (~3);
+  unsigned char* textureData = new unsigned char[paddedRow];
+  unsigned char tmp;
+
+  for(int i = 0; i < textureHeight; i++)
   {
-    std::cout << "i: " << i << " = " << textureData[i] << std::endl;
-    
-    unsigned char tmp = textureData[i];
-    textureData[i] = textureData[i+2];
-    textureData[i+2] = tmp;
+      fread(textureData, sizeof(unsigned char), paddedRow, f);
+      for(int j = 0; j < textureWidth*3; j += 3)
+      {
+          // Convert (B, G, R) to (R, G, B)
+          tmp = textureData[j];
+          textureData[j] = textureData[j+2];
+          textureData[j+2] = tmp;
+
+          // std::cout << "R: "<< (int)textureData[j] << " G: " << (int)textureData[j+1]<< " B: " << (int)textureData[j+2]<< std::endl;
+      }
   }
+
+  fclose(f);
+
   /*Now data should contain the (R, G, B) values of the pixels. The color of pixel (i, j) is stored at
    data[j * 3* width + 3 * i], data[j * 3 * width + 3 * i + 1] and data[j * 3 * width + 3*i + 2].
    
    In the last part, the swap between every first and third pixel is done because windows stores the
    color values as (B, G, R) triples, not (R, G, B).*/
-  
-  
-  std::cout << "TextureData: " << textureData[42] << std::endl;
+
+  std::cout << "R: "<< (int)textureData[1000] << " G: " << (int)textureData[1001]<< " B: " << (int)textureData[1002]<< std::endl;
 }
 
 
