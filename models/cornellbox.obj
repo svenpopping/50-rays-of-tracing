@@ -1,6 +1,6 @@
 # Blender v2.70 (sub 0) OBJ File: ''
 # www.blender.org
-mtllib cornellboxF.mtl
+mtllib cornellbox.mtl
 o teapot.005
 v -0.005214 0.191235 -0.316544
 v -0.007703 0.186343 -0.318759

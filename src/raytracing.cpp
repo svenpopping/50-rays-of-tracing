@@ -32,6 +32,7 @@ std::vector<Vec3Dd> rayColors;
 std::vector<Vec3Dd> lightRayOrigins;
 
 unsigned long selectedLight;
+bool selectAll;
 
 bool debug;
 
@@ -55,6 +56,27 @@ void init()
     //here, we set it to the current location of the camera
     MyLightPositions.push_back(MyCameraPosition);
   selectedLight = 0;
+  
+  // Lights
+  //
+  std::vector<int> indices;
+  for (unsigned int i = 0; i < MyMesh.triangles.size(); i++){
+    unsigned int triMat = MyMesh.triangleMaterials.at(i);
+    Material mat = MyMesh.materials.at(triMat);
+    if (mat.name().find(LIGHT_NAME) != std::string::npos) { // Reflection
+      Triangle triangle = MyMesh.triangles.at(i);
+      Vec3Dd v0 = MyMesh.vertices.at(triangle.v[0]).p;
+      Vec3Dd v1 = MyMesh.vertices.at(triangle.v[1]).p;
+      Vec3Dd v2 = MyMesh.vertices.at(triangle.v[2]).p;
+      MyLightPositions.push_back(v0);
+      MyLightPositions.push_back(v1);
+      MyLightPositions.push_back(v2);
+      indices.push_back(i);
+    }
+  }
+  for (unsigned int i = 0; i < indices.size(); i++){
+    MyMesh.triangles.erase(MyMesh.triangles.begin() + indices.at(i) - 1*i);
+  }
 }
 
 //return the color of your pixel.
@@ -400,7 +422,7 @@ void yourDebugDraw()
     glPointSize(10);
     glBegin(GL_POINTS);
   for (unsigned i = 0; i<MyLightPositions.size(); ++i){
-      if(i == selectedLight)
+      if(i == selectedLight || selectAll)
         glColor3dv(getSunColor().p);
       else
         glColor3d(1, 1, 1);
@@ -432,17 +454,26 @@ void yourDebugDraw()
         }
       glLineWidth(0.5);
       for(int i = 0; i < lightRayOrigins.size(); i++){
-        Vec3Dd color = getSunColor();
-        Vec3Dd origin = lightRayOrigins.at(i);
-        Vec3Dd intersection = MyLightPositions.at(selectedLight);
+        std::vector<Vec3Dd> lightSources;
+        if(selectAll){
+          lightSources = MyLightPositions;
+        } else {
+          lightSources.push_back(MyLightPositions.at(selectedLight));
+        }
         
-        glBegin(GL_LINES);
-
-        glColor3d(color[0], color[1], color[2]);
-        glVertex3d(origin[0], origin[1], origin[2]);
-        glColor3d(color[0], color[1], color[2]);
-        glVertex3d(intersection[0], intersection[1], intersection[2]);
-        glEnd();
+        for (int j = 0; j < lightSources.size(); j++) {
+          Vec3Dd color = getSunColor();
+          Vec3Dd origin = lightRayOrigins.at(i);
+          Vec3Dd intersection = lightSources.at(j);
+          glBegin(GL_LINES);
+          
+          glColor3d(color[0], color[1], color[2]);
+          glVertex3d(origin[0], origin[1], origin[2]);
+          glColor3d(color[0], color[1], color[2]);
+          glVertex3d(intersection[0], intersection[1], intersection[2]);
+          glEnd();
+        }
+        
       }
     }
   
@@ -511,6 +542,9 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
       break;
     case 'r':
       break;
+    case 'V':
+      toggleSelectAll();
+      break;
       
     // case any number
       // Set light intensity of last light source
@@ -576,6 +610,10 @@ void clearDebugVector(){
 
 void toggleDebug(){
     debug = !debug;
+}
+
+void toggleSelectAll(){
+  selectAll = !selectAll;
 }
 
 void toggleFillColor(){

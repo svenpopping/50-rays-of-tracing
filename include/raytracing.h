@@ -43,6 +43,7 @@ void clearDebugVector();
 void toggleDebug();
 void toggleFillColor();
 void toggleBackgroundColor();
+void toggleSelectAll();
 
 //Shadow Functions
 bool inShadow(const Vec3Dd intersection, const Vec3Dd lightDirection);
