@@ -156,8 +156,6 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
     if(debug){
       lightRayOrigins.push_back(intersection);
     }
-    
-    
     Vec3Dd color = Vec3Dd(0, 0, 0);
 
     color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
@@ -173,12 +171,12 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
       if(debug)
         std::cout << "Reflecting..." << mat.name() << std::endl;
       
-      totalColor = totalColor * (1 - mat.Tr()) + computeReflectionVector(viewDirection, intersection, N.getNormalized(), level) * (mat.Tr());
+      totalColor = totalColor * (1 - mat.Tr()) + computeReflectionVector(viewDirection.getNormalized(), intersection, N.getNormalized(), level) * (mat.Tr());
     }
     if (mat.name().find(REFRACTION_NAME) != std::string::npos) { // Refraction
       if(debug)
         std::cout << "Refracting..." << std::endl;
-      totalColor = totalColor * mat.Tr() + computeRefraction(dir, intersection, level, triangleIndex) * (1 - mat.Tr());
+      totalColor = totalColor * mat.Tr() + computeRefraction(dir.getNormalized(), intersection, level, triangleIndex) * (1 - mat.Tr());
     }
   }
 
@@ -278,7 +276,7 @@ Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int tr
 	if (Vec3Dd::dotProduct(N, lightDirection) > 0)
 	{
 		// half vector
-		int shinyness = 4;
+		int shinyness = 20;
 		Vec3Dd H = (lightDirection + viewDirection).getNormalized();
 		specularTerm = pow(Vec3Dd::dotProduct(N, H), shinyness);
 	}
@@ -288,7 +286,7 @@ Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int tr
 
 Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint){
     Vec3Dd lightDir = Vec3Dd(0, 0, 0);
-    lightDir = lightPoint - point;
+	lightDir.fromTo(point, lightPoint);
     return lightDir;
 }
 

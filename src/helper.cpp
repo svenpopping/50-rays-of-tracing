@@ -68,9 +68,11 @@ Vec3Dd getNormal(Triangle triangle){
 }
 
 double triangleArea(const Vec3Dd A, const Vec3Dd B, const Vec3Dd C) {
-	Vec3Dd BA = B - A;
-	Vec3Dd CA = C - A;
-	return (BA.getLength() * CA.getLength() * sin( acos( Vec3Dd::dotProduct(BA, CA)/ ( BA.getLength()*CA.getLength() ) ) ))/2;
+	Vec3Dd AB;
+	Vec3Dd AC;
+	AB.fromTo(A, B);
+	AC.fromTo(A, C);
+	return (AB.getLength() * AC.getLength() * sin( acos( Vec3Dd::dotProduct(AB.getNormalized(), AC.getNormalized()) ) ))/2;
 }
 
 Vec3Dd getNormalAtIntersection(const Vec3Dd intersection, const Triangle triangle) {
