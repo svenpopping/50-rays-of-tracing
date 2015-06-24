@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <cfloat>
 #include "mesh.h"
 #include "Vec3D.h"
 
@@ -16,8 +17,7 @@ public:
 
 	void build(const Mesh &m, const Vec3D<F> lb, const Vec3D<F> rb)
 	{
-		Vec3D<F> lbb = Vec3D<F>(-1.5, -1.5, -1.5), rbb = Vec3D<F>(1.5, 1.5, 1.5);
-		this->nodes.push_back(bvh_node<F>(lbb, rbb));
+		nodes.push_back(bvh_node<F>(lb, rb));
 		for (unsigned i = 0; i < m.triangles.size(); i++) {
 			add_child(m, i, m.triangles[i]);
 		}
@@ -73,20 +73,34 @@ public:
 						std::cout << "dx / dy / dz: " << xd << " / " << yd << " / " << zd << std::endl;
 
 						bvh_node<F> nn(nl, nu);
+						Vec3D<F>  minb(DBL_MAX, DBL_MAX, DBL_MAX),  maxb(DBL_MIN, DBL_MIN, DBL_MIN);
+						Vec3D<F> nminb(DBL_MAX, DBL_MAX, DBL_MAX), nmaxb(DBL_MIN, DBL_MIN, DBL_MIN);
 						for (auto it = n.children.begin(); it < n.children.end(); it++) {
 							const bvh_triangle<F> &t = *it;
 							if (!t.in(n.bounds[0], n.bounds[1])) {
 								nn.children.push_back(t);
 								n.children.erase(it);
-							}
+								for (int i = 0; i < 3; i++) {
+									nminb.p[i] = fmin(t.lbound.p[i], nminb.p[i]);
+									nmaxb.p[i] = fmax(t.rbound.p[i], nmaxb.p[i]);
+								}
+							} else
+								for (int i = 0; i < 3; i++) {
+									minb.p[i] = fmin(t.lbound.p[i], minb.p[i]);
+									maxb.p[i] = fmax(t.rbound.p[i], maxb.p[i]);
+								}
 						}
 
+						n.bounds[0] = minb;
+						n.bounds[1] = maxb;
+						nn.bounds[0] = nminb;
+						nn.bounds[1] = nmaxb;
 						if (nn.children.size() > 0) {
 							nodes.push_back(nn);
 							did_split = true;
 							didx = didy = didz = false;
 							//if (n.children.size() == 0)
-								//nodes.erase(ni);
+							//	nodes.erase(ni);
 							break;
 						}
 					}
