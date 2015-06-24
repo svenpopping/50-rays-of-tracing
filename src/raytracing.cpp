@@ -21,6 +21,10 @@
 Vec3Dd testColor;
 Vec3Dd backgroundColor = nullVector();
 
+Vec3Dd lastRayOrigin;
+Vec3Dd lastRayDestination;
+Vec3Dd newRayDestination;
+
 std::vector<Vec3Dd> rayOrigins;
 std::vector<Vec3Dd> rayIntersections;
 std::vector<Vec3Dd> rayColors;
@@ -85,10 +89,7 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     }
 
     if(intersectionFound){
-      double ShadowScalar = 1.0 - ShadowPercentage(intersection, index);
       color = shade(dir, intersection, level, index, getNormalAtIntersection(intersection, MyMesh.triangles.at(index)));
-      color = color*ShadowScalar;
-      
     }
   
   if(debug){
@@ -105,38 +106,23 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     return color;
 }
 
-double ShadowPercentage(const Vec3Dd point, int j) {
-    unsigned Lightpoints = MyLightPositions.size();
-    double shadows = 0.0;
-    for (unsigned i = 0; i < Lightpoints; i++) {
-        if (inShadow(point, j, MyLightPositions.at(i))) {
-            shadows++;
-        }
-    }
-    //std::cout << Lightpoints;
-    shadows = shadows/Lightpoints;
-    return shadows;
-}
 
-
-bool inShadow(const Vec3Dd point, unsigned j, const Vec3Dd lightSource) {
+bool inShadow(const Vec3Dd intersection, const Vec3Dd lightDirection) {
+  bool interrupt  = false;
+  for (int t = 0; t < MyMesh.triangles.size(); t++) {
+    unsigned int triMat = MyMesh.triangleMaterials.at(t);
+    Material mat = MyMesh.materials.at(triMat);
     double depth = DBL_MAX;
-    bool interrupt  = false;
-    for (unsigned i = 0; i < MyMesh.triangles.size(); i++) {
-      unsigned int triMat = MyMesh.triangleMaterials.at(i);
-      Material mat = MyMesh.materials.at(triMat);
-      if (!(mat.name().find(REFRACTION_NAME) != std::string::npos)) { // Refraction
-
-        Triangle triangle = MyMesh.triangles.at(i);
-        Vec3Dd dir = lightVector(point, lightSource);
-        Vec3Dd offsetPoint = point + dir * 0.1;
-        Vec3Dd intersection = rayTriangleIntersect(offsetPoint, dir, triangle, depth);
-        if (!isNulVector(intersection) && i != j) {
-            interrupt = true;
-        }
+    if (!(mat.name().find(REFRACTION_NAME) != std::string::npos)) { // Refraction
+      
+      Triangle triangle = MyMesh.triangles.at(t);
+      Vec3Dd testIntersect = rayTriangleIntersect(intersection + lightDirection*0.01, lightDirection, triangle, depth);
+      if (!isNulVector(testIntersect)) {
+        interrupt = true;
       }
-    }
-    return interrupt;
+  }
+}
+  return interrupt;
 }
 
 Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangleIndex, const Vec3Dd N){
@@ -161,8 +147,34 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
     color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
     color += speculair(lightDirection.getNormalized(), viewDirection.getNormalized(), triangleIndex, N.getNormalized());
     
-    //add it to the total
-  	totalColor += clamp(color);
+    // Check if intersects with object
+    // If so, be black.
+    if(inShadow(intersection, lightDirection)){
+      if(debug)
+        printLine("We are in the shadow");
+    }
+    else {
+      if(debug){
+        lightRayOrigins.push_back(intersection);
+      }
+      
+      Vec3Dd diffuseColor = diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
+      if(debug){
+        printLine("diffuse");
+        printVector(diffuseColor);
+      }
+      Vec3Dd speculairColor = speculair(lightDirection.getNormalized(), viewDirection.getNormalized(), triangleIndex, N.getNormalized());
+      
+      if(debug){
+        printLine("diffuse");
+        printVector(speculairColor);
+      }
+      
+      //add it to the total
+      totalColor += clamp(diffuseColor + speculairColor);
+      
+    }
+    
   }
   
   if (level < MAX_LEVEL) {
@@ -263,7 +275,7 @@ Vec3Dd ambient(int triangleIndex){
 
 Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int triangleIndex, const Vec3Dd N){
   
- // Vec3Dd reflection = reflectionVector(lightDirection, N);
+  Vec3Dd reflection = reflectionVector(lightDirection, N);
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 	Vec3Dd color = MyMesh.materials.at(triMat).Ks();
 
@@ -292,7 +304,7 @@ Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint){
 
 Vec3Dd reflectionVector(const Vec3Dd lightDirection, const Vec3Dd normalVector) {
     Vec3Dd reflection = Vec3Dd(0, 0, 0);
-    reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
+	reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
     return reflection;
 }
 // We can also add textures!
@@ -473,7 +485,7 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
 	//here, as an example, I use the ray to fill in the values for my upper global ray variable
 	//I use these variables in the debugDraw function to draw the corresponding ray.
 	//try it: Press a key, move the camera, see the ray that was launched as a line.
-	
+  
   switch (t) {
     case 'd':
       toggleDebug();
@@ -505,6 +517,8 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
     default:
       if(debug){
         performRayTracing(rayOrigin, rayDestination);
+        lastRayOrigin = rayOrigin;
+        lastRayDestination = rayDestination;
         // std::cout << " The color from the ray is: ";
         //printVector(testColor);
         // std::cout << std::endl;
@@ -512,10 +526,44 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
       }
       break;
   }
+}
+
+void yourSpecialKeyboardFunc(int t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination){
+
+  //here, as an example, I use the ray to fill in the values for my upper global ray variable
+  //I use these variables in the debugDraw function to draw the corresponding ray.
+  //try it: Press a key, move the camera, see the ray that was launched as a line.
   
-  printLine("We are done!");
+  std::cout << "Pressed the key: " << t << std::endl;
 
-
+  if (debug) {
+    switch (t) {
+      case 100:
+        // left
+        newRayDestination = lastRayDestination - Vec3Dd(0.05, 0, 0);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+      case 101:
+        // up
+        newRayDestination = lastRayDestination - Vec3Dd(0, 0, 0.05);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+      case 102:
+        // right
+        newRayDestination = lastRayDestination + Vec3Dd(0.05, 0, 0);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+      case 103:
+        // down
+        newRayDestination = lastRayDestination + Vec3Dd(0, 0, 0.05);
+        lastRayDestination = newRayDestination;
+        performRayTracing(lastRayOrigin, newRayDestination);
+        break;
+    }
+  }
 }
 
 
