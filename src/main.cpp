@@ -445,7 +445,7 @@ bool compareColor(Vec3Dd color1, Vec3Dd color2, Vec3Dd color3, Vec3Dd color4) {
 */
 bool compareWithEpsilon(Vec3Dd vec1, Vec3Dd vec2) {
 	bool equal = false;
-	if ( abs(vec1[0] - vec2[0]) < EPSILON && abs(vec1[1] - vec2[1]) < EPSILON && abs(vec1[2] - vec2[2]) < EPSILON) {
+	if ( fabs(vec1[0] - vec2[0]) < EPSILON && fabs(vec1[1] - vec2[1]) < EPSILON && fabs(vec1[2] - vec2[2]) < EPSILON) {
 		equal = true;
 	}
 	return equal;
