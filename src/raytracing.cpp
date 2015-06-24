@@ -56,6 +56,27 @@ void init()
     //here, we set it to the current location of the camera
     MyLightPositions.push_back(MyCameraPosition);
   selectedLight = 0;
+  
+  // Lights
+  //
+  std::vector<int> indices;
+  for (unsigned int i = 0; i < MyMesh.triangles.size(); i++){
+    unsigned int triMat = MyMesh.triangleMaterials.at(i);
+    Material mat = MyMesh.materials.at(triMat);
+    if (mat.name().find(LIGHT_NAME) != std::string::npos) { // Reflection
+      Triangle triangle = MyMesh.triangles.at(i);
+      Vec3Dd v0 = MyMesh.vertices.at(triangle.v[0]).p;
+      Vec3Dd v1 = MyMesh.vertices.at(triangle.v[1]).p;
+      Vec3Dd v2 = MyMesh.vertices.at(triangle.v[2]).p;
+      MyLightPositions.push_back(v0);
+      MyLightPositions.push_back(v1);
+      MyLightPositions.push_back(v2);
+      indices.push_back(i);
+    }
+  }
+  for (unsigned int i = 0; i < indices.size(); i++){
+    MyMesh.triangles.erase(MyMesh.triangles.begin() + indices.at(i) - 1*i);
+  }
 }
 
 //return the color of your pixel.
