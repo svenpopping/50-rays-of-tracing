@@ -42,15 +42,17 @@ public:
 				bvh_node<F> &n = *ni;
 
 				if (n.children.size() > N) {
+					// Try halfway split in the X, Y and Z axes.
 					bool didx = false, didy = false, didz = false;
 					while (true) {
 						std::cout << "Found possible split: n = " << n.children.size() << std::endl;
 
+						// Find largest split by volume.
 						F xd = n.bounds[1].p[0] - n.bounds[0].p[0], xxd = fabs(xd);
 						F yd = n.bounds[1].p[1] - n.bounds[0].p[1], yyd = fabs(yd);
 						F zd = n.bounds[1].p[2] - n.bounds[0].p[2], zzd = fabs(zd);
-
 						std::cout << "Old bounds: " << n.bounds[0] << "/" << n.bounds[1] << std::endl;
+
 						Vec3D<F> nl(n.bounds[0]), nu(n.bounds[1]);
 						if (!didx && xxd >= yyd && xxd >= zzd) {
 							didx = true;
@@ -72,6 +74,7 @@ public:
 						std::cout << "New bounds: " << n.bounds[0] << "/" << n.bounds[1] << std::endl;
 						std::cout << "dx / dy / dz: " << xd << " / " << yd << " / " << zd << std::endl;
 
+						// Move over triangles and re-calculate boundaries for both boxes.
 						bvh_node<F> nn(nl, nu);
 						Vec3D<F>  minb(DBL_MAX, DBL_MAX, DBL_MAX),  maxb(DBL_MIN, DBL_MIN, DBL_MIN);
 						Vec3D<F> nminb(DBL_MAX, DBL_MAX, DBL_MAX), nmaxb(DBL_MIN, DBL_MIN, DBL_MIN);
@@ -95,6 +98,8 @@ public:
 						n.bounds[1] = maxb;
 						nn.bounds[0] = nminb;
 						nn.bounds[1] = nmaxb;
+
+						// See if we got anything and move along if we have.
 						if (nn.children.size() > 0) {
 							nodes.push_back(nn);
 							did_split = true;
@@ -151,7 +156,6 @@ public:
 
 	inline bool in(const Vec3D<F> &lb, const Vec3D<F> &rb) const
 	{
-		//std::cout << "DBG: " << *this << ".. " << lb << "/" << rb << std::endl;
 		if (lbound >= lb && rbound < rb)
 			return true;
 		return center >= lb && center < rb;
