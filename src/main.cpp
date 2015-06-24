@@ -241,13 +241,7 @@ void keyboard(unsigned char key, int x, int y)
     switch (key)
     {
 	//add/update a light based on the camera position.
-	case 'L':
-		MyLightPositions.push_back(getCameraPosition());
-		break;
-	case 'l':
-		MyLightPositions[MyLightPositions.size()-1]=getCameraPosition();
-		break;
-	case 'r':
+  case 'r':
 	{
 		//Pressing r will launch the raytracing.
 		cout<<"Raytracing..."<<endl;

@@ -25,6 +25,10 @@ std::vector<Vec3Dd> rayOrigins;
 std::vector<Vec3Dd> rayIntersections;
 std::vector<Vec3Dd> rayColors;
 
+std::vector<Vec3Dd> lightRayOrigins;
+
+unsigned long selectedLight;
+
 bool debug;
 
 //use this function for any preprocessing of the mesh.
@@ -46,6 +50,7 @@ void init()
     //at least ONE light source has to be in the scene!!!
     //here, we set it to the current location of the camera
     MyLightPositions.push_back(MyCameraPosition);
+  selectedLight = 0;
 }
 
 //return the color of your pixel.
@@ -148,7 +153,11 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
   // loop for all lightpositions
   for (unsigned i = 0; i < MyLightPositions.size(); ++i) {
     Vec3Dd lightDirection = lightVector(intersection, MyLightPositions.at(i));
-
+    if(debug){
+      lightRayOrigins.push_back(intersection);
+    }
+    
+    
     Vec3Dd color = Vec3Dd(0, 0, 0);
 
     color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
@@ -378,20 +387,27 @@ void yourDebugDraw()
     //let's draw the lights in the scene as points
     glPushAttrib(GL_ALL_ATTRIB_BITS); //store all GL attributes
     glDisable(GL_LIGHTING);
-    glColor3d(1, 1, 1);
     glPointSize(10);
     glBegin(GL_POINTS);
-    for (unsigned i = 0; i<MyLightPositions.size(); ++i)
-        glVertex3dv(MyLightPositions[i].pointer());
-  glEnd();
+  for (unsigned i = 0; i<MyLightPositions.size(); ++i){
+      if(i == selectedLight)
+        glColor3dv(getSunColor().p);
+      else
+        glColor3d(1, 1, 1);
+      glVertex3dv(MyLightPositions[i].pointer());
+  }
+    glEnd();
   
     //Show rays
+    glLineWidth(2.5);
+    glPointSize(5);
     if(debug){
-        for (unsigned i = 0; i != rayColors.size(); i++) {
+        for (int i = 1; i < rayColors.size(); i++) {
             Vec3Dd color = rayColors.at(i);
             Vec3Dd origin = rayOrigins.at(i);
             Vec3Dd intersection = rayIntersections.at(i);
-            
+          
+          
             glBegin(GL_LINES);
             glColor3d(color[0], color[1], color[2]);
             glVertex3d(origin[0], origin[1], origin[2]);
@@ -399,20 +415,26 @@ void yourDebugDraw()
             glVertex3d(intersection[0], intersection[1], intersection[2]);
             glEnd();
             
-            glPointSize(3);
+
             glBegin(GL_POINTS);
             glVertex3dv(intersection.pointer());
             glEnd();
         }
+      glLineWidth(0.5);
+      for(int i = 0; i < lightRayOrigins.size(); i++){
+        Vec3Dd color = getSunColor();
+        Vec3Dd origin = lightRayOrigins.at(i);
+        Vec3Dd intersection = MyLightPositions.at(selectedLight);
+        
+        glBegin(GL_LINES);
+
+        glColor3d(color[0], color[1], color[2]);
+        glVertex3d(origin[0], origin[1], origin[2]);
+        glColor3d(color[0], color[1], color[2]);
+        glVertex3d(intersection[0], intersection[1], intersection[2]);
+        glEnd();
+      }
     }
-    
-    
-    // Show light positions
-    glPointSize(10);
-    glBegin(GL_POINTS);
-    glVertex3dv(MyLightPositions[0].pointer());
-    glEnd();
-    glPopAttrib();
   
     
     //draw whatever else you want...
@@ -446,6 +468,7 @@ void yourDebugDraw()
 // 't' Toggles the debug view
 // 'c' Adds the option to clear the debugvectors
 // 'b' changes the background color
+// 'v' Changes the selection of light and goes to the view
 
 void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3Dd & rayDestination){
 
@@ -465,6 +488,18 @@ void yourKeyboardFunc(char t, int x, int y, const Vec3Dd & rayOrigin, const Vec3
       break;
     case 'b':
       toggleBackgroundColor();
+      break;
+    case 'v':
+      selectedLight = (selectedLight+1) % (MyLightPositions.size());
+      break;
+    case 'L':
+      MyLightPositions.push_back(MyCameraPosition);
+      selectedLight = MyLightPositions.size()-1;
+      break;
+    case 'l':
+      MyLightPositions[selectedLight] = MyCameraPosition;
+      break;
+    case 'r':
       break;
       
     // case any number
@@ -490,6 +525,7 @@ void clearDebugVector(){
     rayOrigins.clear();
     rayIntersections.clear();
     rayColors.clear();
+  lightRayOrigins.clear();
 }
 
 void toggleDebug(){
@@ -508,13 +544,13 @@ void toggleFillColor(){
 }
 
 void toggleBackgroundColor(){
-  glClear(GL_COLOR_BUFFER_BIT);
-  glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], 1);
   
   backgroundColor = backgroundColor + Vec3Dd(0.2,0.2,0.2);
   if(backgroundColor[0] > 1){
     backgroundColor = nullVector();
   }
+  glClear(GL_COLOR_BUFFER_BIT);
+  glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], 1);
 }
 
 
