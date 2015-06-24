@@ -43,7 +43,6 @@ unsigned int WindowSize_Y = 800;  // resolution Y
 
 
 // helper variables for adaptive Anti-Aliasing.
-// SET EPSILON TO 0.001 FOR FINAL RENDER!
 #define EPSILON  0.05
 #define MAX_SAMPLES  5 
 
