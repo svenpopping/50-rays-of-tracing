@@ -15,7 +15,7 @@
 //temporary variables
 //these are only used to illustrate
 //a simple debug drawing. A ray
-#define MAX_LEVEL 15
+#define MAX_LEVEL 3
 #define EPSILON   0.001
 
 Vec3Dd testColor;
@@ -111,9 +111,29 @@ Vec3Dd trace(const Vec3Dd & origin, const Vec3Dd & dir, int level){
     }
 
     if(intersectionFound){
+		Triangle triangle = MyMesh.triangles.at(index);
+		unsigned int triMat = MyMesh.triangleMaterials.at(index);
+		Material mat = MyMesh.materials.at(triMat);
+		Vec3Dd viewDirection = MyCameraPosition - intersection;
+		Vec3Dd normalVector = getNormalAtIntersection(intersection, triangle);
+
       color = shade(dir, intersection, level, index, getNormalAtIntersection(intersection, MyMesh.triangles.at(index)));
+
+	  if (level < MAX_LEVEL) {
+
+		  if ((mat.name().find(REFLECTION_NAME) != std::string::npos)) {
+			  Vec3Dd reflectColor = computeReflectionVector(dir, intersection, normalVector, level);
+			  color = (1.0 - mat.Tr()) * color + mat.Tr() * reflectColor;
+		  }
+		  double transparency = mat.Tr();
+		  if (transparency < 1.0) {
+			  Vec3Dd refractColor = computeRefraction(dir, intersection, level + 1, index);
+			  color = transparency * color + (1.0 - transparency) * refractColor;
+		  }
+
+	  }
     }
-  
+
   if(debug){
     std::cout << "Pushing ray..." << std::endl;
     printVector(origin);
@@ -138,7 +158,7 @@ bool inShadow(const Vec3Dd intersection, const Vec3Dd lightDirection) {
     if (!(mat.name().find(REFRACTION_NAME) != std::string::npos)) { // Refraction
       
       Triangle triangle = MyMesh.triangles.at(t);
-      Vec3Dd testIntersect = rayTriangleIntersect(intersection + lightDirection*0.01, lightDirection, triangle, depth);
+      Vec3Dd testIntersect = rayTriangleIntersect(intersection + lightDirection*0.1, intersection + lightDirection, triangle, depth);
       if (!isNulVector(testIntersect)) {
         interrupt = true;
       }
@@ -165,10 +185,6 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
       lightRayOrigins.push_back(intersection);
     }
     Vec3Dd color = Vec3Dd(0, 0, 0);
-
-    color += diffuse(lightDirection.getNormalized(),  N.getNormalized(), triangleIndex);
-    color += speculair(lightDirection.getNormalized(), viewDirection.getNormalized(), triangleIndex, N.getNormalized());
-    
     // Check if intersects with object
     // If so, be black.
     if(inShadow(intersection, lightDirection)){
@@ -193,28 +209,12 @@ Vec3Dd shade(const Vec3Dd dir, const Vec3Dd intersection, int level, int triangl
       }
       
       //add it to the total
-      totalColor += clamp(diffuseColor + speculairColor);
+      totalColor += diffuseColor + speculairColor;
       
     }
     
   }
-  
-  if (level < MAX_LEVEL) {
-    level++;
-    if (mat.name().find(REFLECTION_NAME) != std::string::npos) { // Reflection
-      if(debug)
-        std::cout << "Reflecting..." << mat.name() << std::endl;
-      
-      totalColor = totalColor * (1 - mat.Tr()) + computeReflectionVector(viewDirection.getNormalized(), intersection, N.getNormalized(), level) * (mat.Tr());
-    }
-    if (mat.name().find(REFRACTION_NAME) != std::string::npos) { // Refraction
-      if(debug)
-        std::cout << "Refracting..." << std::endl;
-      totalColor = totalColor * mat.Tr() + computeRefraction(dir.getNormalized(), intersection, level, triangleIndex) * (1 - mat.Tr());
-    }
-  }
-
-  return clamp(totalColor);
+  return totalColor;
 }
 
 //Ray Sphere::calcRefractingRay(const Ray &r, const Vector &intersection,Vector &normal, double & refl, double &trans)const
@@ -224,7 +224,7 @@ Vec3Dd computeRefraction(const Vec3Dd dir, const Vec3Dd intersection, int level,
     if(material.Tr() < 1 && level < MAX_LEVEL){
       double n1, n2, n;
       Triangle triangle = MyMesh.triangles.at(triangleIndex);
-      Vec3Dd normal = getNormal(triangle);
+      Vec3Dd normal = getNormalAtIntersection(intersection, MyMesh.triangles.at(triangleIndex));
       
       double cosI = Vec3Dd::dotProduct(dir, normal);
       
@@ -263,8 +263,9 @@ Vec3Dd computeRefraction(const Vec3Dd dir, const Vec3Dd intersection, int level,
       //  }
       Vec3Dd refractedRay = n * dir + (n * cosI - cosT)*normal;
       
-      Vec3Dd color = trace(intersection +refractedRay.getNormalized()*0.01 , refractedRay.getNormalized(), level);
+      Vec3Dd color = trace((intersection +refractedRay).getNormalized()*0.01 , (intersection + refractedRay).getNormalized(), level);
       
+
       return color;
     }
     return nullVector();
@@ -274,17 +275,18 @@ Vec3Dd computeRefraction(const Vec3Dd dir, const Vec3Dd intersection, int level,
 
 
 Vec3Dd diffuse(const Vec3Dd lightSource, Vec3Dd normal,  int triangleIndex){
-    Vec3Dd color = Vec3Dd(0, 0, 0);
     unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
     
     // Probably split into RGB values of the material
-    color = MyMesh.materials.at(triMat).Kd();
-    
-    // Od = object color
-    // Ld = lightSource color
-    
-    color = color * std::fmax(0, Vec3Dd::dotProduct(lightSource, normal));
-    return 1 * color;
+    Vec3Dd color = MyMesh.materials.at(triMat).Kd();
+
+	double diffuser = Vec3Dd::dotProduct(lightSource, normal);
+	if (diffuser > 0.0) {
+		return diffuser * color;
+	}
+	else {
+		return nullVector();
+	}
 }
 
 Vec3Dd ambient(int triangleIndex){
@@ -296,25 +298,35 @@ Vec3Dd ambient(int triangleIndex){
 
 
 Vec3Dd speculair(const Vec3Dd lightDirection, const Vec3Dd viewDirection, int triangleIndex, const Vec3Dd N){
-  
-  Vec3Dd reflection = reflectionVector(lightDirection, N);
+
+	Vec3Dd reflection = reflectionVector(lightDirection, N);
+	double reflectedLightAlongRay = -Vec3Dd::dotProduct(N, reflection);
+
+
 	unsigned int triMat = MyMesh.triangleMaterials.at(triangleIndex);
 	Vec3Dd color = MyMesh.materials.at(triMat).Ks();
 
-	/*Vec3Dd spec = color * pow(std::fmax(Vec3Dd::dotProduct(reflection, viewDirection), 0.0), 16);
-	return spec;*/
-	double specularTerm = 0;
+	// Is the reflected light even visible?
+	if (reflectedLightAlongRay > 0) {
+		return pow(reflectedLightAlongRay, 42) * color;
+	}
+	else {
+		return nullVector();
+	}
+
+	//Blinn-phong specular
+	 /*double specularTerm = 0;
 
 	// calculate specular reflection only if
 	// the surface is oriented to the light source
-	if (Vec3Dd::dotProduct(N, lightDirection) > 0)
+	 if (Vec3Dd::dotProduct(N, lightDirection) > 0)
 	{
 		// half vector
-		int shinyness = 20;
-		Vec3Dd H = (lightDirection + viewDirection).getNormalized();
+		int shinyness = 47;
+		Vec3Dd H = (lightDirection + viewDirection)/2;
 		specularTerm = pow(Vec3Dd::dotProduct(N, H), shinyness);
 	}
-		return color * specularTerm;
+		return color * specularTerm; */
 }
 
 
@@ -326,18 +338,16 @@ Vec3Dd lightVector(const Vec3Dd point, const Vec3Dd lightPoint){
 
 Vec3Dd reflectionVector(const Vec3Dd lightDirection, const Vec3Dd normalVector) {
     Vec3Dd reflection = Vec3Dd(0, 0, 0);
-	reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
+	reflection = lightDirection - 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector;
     return reflection;
 }
 // We can also add textures!
 
 
 Vec3Dd computeReflectionVector(const Vec3Dd viewDirection, const Vec3Dd intersection, const Vec3Dd normalVector, int level) {
-    //    Vec3Dd reflection = (2 * Vec3Dd::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
-    Vec3Dd reflection = (2 * Vec3Dd::dotProduct(viewDirection, normalVector) * normalVector) - viewDirection;
-    // Vec3Dd reflection = 2 * (Vec3Dd::dotProduct(lightDirection, normalVector))*normalVector - lightDirection;
+	Vec3Dd reflection = viewDirection - (2 * Vec3Dd::dotProduct(viewDirection, normalVector) * normalVector);
     
-    return trace(intersection +reflection.getNormalized()*0.01, reflection.getNormalized(), level);
+    return trace(intersection + reflection * 0.01, intersection + reflection, level+1);
 }
 // We can also add textures!
 
@@ -357,7 +367,7 @@ Vec3Dd rayTriangleIntersect(const Vec3Dd &orig, const Vec3Dd &dir, const Triangl
     
     // check if ray and plane are parallel ?
     double NdotRayDirection = Vec3Dd::dotProduct(N, dir);
-    if (fabs(NdotRayDirection) < EPSILON) // almost 0
+    if (abs(NdotRayDirection) < EPSILON) // almost 0
         return nullVector(); // they are parallel so they don't intersect !
     
     // compute d parameter using equation 2 (d is the distance from the origin (0, 0, 0) to the plane)
