@@ -155,7 +155,7 @@ bool inShadow(const Vec3Dd intersection, const Vec3Dd lightDirection) {
     unsigned int triMat = MyMesh.triangleMaterials.at(t);
     Material mat = MyMesh.materials.at(triMat);
     double depth = DBL_MAX;
-    if (!(mat.name().find(REFRACTION_NAME) != std::string::npos)) { // Refraction
+    if (!(mat.Tr() < 1)) { // Refraction
       
       Triangle triangle = MyMesh.triangles.at(t);
       Vec3Dd testIntersect = rayTriangleIntersect(intersection + lightDirection*0.1, intersection + lightDirection, triangle, depth);
